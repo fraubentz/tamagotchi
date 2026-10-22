@@ -339,7 +339,8 @@
       pointer-events: none;
     }
 
-    .action.feed .food {
+    .action.feed .food,
+    .action.snack .food {
       position: absolute;
       left: 50%;
       top: 48%;
@@ -688,7 +689,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 12px 14px;
-      max-width: 250px;
+      max-width: 290px;
       margin-left: auto;
       margin-right: auto;
       margin-top: 18px;
@@ -765,6 +766,17 @@
       border-color: #fff;
     }
 
+    .top .mute {
+      width: 30px;
+      height: 24px;
+      padding: 0;
+      border-width: 2px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1;
+      box-shadow: 0 2px 0 var(--button-shadow);
+    }
+
     @media (max-width: 420px) {
       .device { width: min(92vw, 390px); }
       .bar { width: min(44vw, 126px); }
@@ -790,6 +802,7 @@
       <div class="top">
         <span id="name">Egg</span>
         <span id="age">Age: 0</span>
+        <button class="mute" id="muteBtn" type="button" aria-label="Sound effects" aria-pressed="true">🔊</button>
       </div>
 
       <div class="bars" aria-label="Pet status bars">
@@ -815,6 +828,10 @@
       <div class="btn-wrap">
         <button id="feedBtn" type="button" title="Feed" aria-label="Feed the pet">F</button>
         <div class="label">Feed</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="snackBtn" type="button" title="Snack" aria-label="Give the pet a snack">S</button>
+        <div class="label">Snack</div>
       </div>
       <div class="btn-wrap">
         <button id="playBtn" type="button" title="Play" aria-label="Play with the pet">P</button>
@@ -910,6 +927,7 @@
       actionLayer: document.getElementById("actionLayer"),
       status: document.getElementById("status"),
       attn: document.getElementById("attn"),
+      mute: document.getElementById("muteBtn"),
       resetBtn: document.getElementById("resetBtn"),
       bars: {
         hunger: document.querySelector('[data-bar="hunger"]'),
@@ -1001,7 +1019,7 @@
 
     function requireAlive() {
       if (!state.alive) {
-        say("Tama is gone. Press New pet.");
+        say((state.speciesName || "Tama") + " is gone. Press New pet.");
         return false;
       }
       if (state.egg && !state.hatched) {
@@ -1019,6 +1037,10 @@
 
     /* ---------- Audio (one shared context) ---------- */
 
+    const MUTE_KEY = "tamagotchi-muted";
+    let muted = false;
+    try { muted = localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { /* storage unavailable */ }
+
     let audioCtx = null;
 
     function getAudio() {
@@ -1030,6 +1052,7 @@
     }
 
     function playTone(type) {
+      if (muted) return;
       try {
         const ctx = getAudio();
         if (!ctx) return;
@@ -1049,6 +1072,7 @@
           medicine: [500, 700, 900],
           call: [880, 660],
           pet: [600, 820],
+          snack: [520, 760],
           fart: [74, 54],
         };
         const f = frequencies[type];
@@ -1091,6 +1115,8 @@
         action.innerHTML = '<div class="splash"></div><div class="drop"></div><div class="bubble" style="left: 42%; top: 68%;"></div><div class="bubble" style="left: 52%; top: 70%;"></div><div class="bubble" style="left: 60%; top: 66%;"></div>';
       } else if (type === "train") {
         action.innerHTML = '<div class="star">⭐</div><div class="spark" style="left: 40%; top: 52%;"></div><div class="spark" style="left: 56%; top: 42%;"></div><div class="spark" style="left: 68%; top: 56%;"></div>';
+      } else if (type === "snack") {
+        action.innerHTML = '<div class="food">🍪</div>';
       } else if (type === "pet") {
         action.innerHTML = '<div class="heart" style="left: 40%; top: 36%;">❤</div><div class="heart" style="left: 52%; top: 28%; animation-delay: 0.15s;">❤</div><div class="heart" style="left: 62%; top: 38%; animation-delay: 0.3s;">❤</div>';
       } else if (type === "medicine") {
@@ -1179,7 +1205,9 @@
           const risk = 0.0001
             + (state.poop >= 3 ? 0.002 : 0)
             + (state.hunger < 20 ? 0.002 : 0)
-            + (state.care < 40 ? 0.001 : 0);
+            + (state.care < 40 ? 0.001 : 0)
+            + (weightStatus() === "Overweight" ? 0.0015 : 0)
+            + (weightStatus() === "Underweight" ? 0.0008 : 0);
           if (Math.random() < risk * dt) {
             state.sick = true;
             state.sickTimer = 0;
@@ -1197,7 +1225,7 @@
         }
         if (state.sickTimer > SICK_DEATH_SECONDS) {
           state.alive = false;
-          say("Tama has passed away from illness. Press New pet to start over.");
+          say((state.speciesName || "Tama") + " has passed away from illness. Press New pet to start over.");
           return;
         }
       }
@@ -1265,7 +1293,7 @@
         state.starving += dt;
         if (state.starving > 60) {
           state.alive = false;
-          say("Tama has passed away. Press New pet to start over.");
+          say((state.speciesName || "Tama") + " has passed away. Press New pet to start over.");
         }
       } else {
         state.starving = 0;
@@ -1431,6 +1459,19 @@
       if (!requireAlive()) return;
       el.status.hidden = false;
       renderStatus();
+    }
+
+    function snack() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (state.hunger >= 100) return say("I'm too full!");
+      state.hunger = clamp(state.hunger + 8);
+      state.happy = clamp(state.happy + 10);
+      adjustWeight(6);
+      say(weightStatus() === "Overweight" ? "Yum... but I'm getting chubby!" : "Yum, a treat!");
+      triggerAction("snack");
+      playTone("snack");
+      bounce();
     }
 
     const PET_COOLDOWN_MS = 2000;
@@ -1686,6 +1727,20 @@
     document.getElementById("medicineBtn").addEventListener("click", medicine);
     document.getElementById("statusBtn").addEventListener("click", toggleStatus);
     document.getElementById("petBtn").addEventListener("click", petPet);
+    document.getElementById("snackBtn").addEventListener("click", snack);
+
+    function renderMute() {
+      el.mute.textContent = muted ? "🔇" : "🔊";
+      el.mute.setAttribute("aria-pressed", String(!muted));
+    }
+
+    el.mute.addEventListener("click", () => {
+      muted = !muted;
+      try { localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) { /* ignore */ }
+      renderMute();
+      playTone("pet"); // confirms sound is back on (silent when muting)
+    });
+    renderMute();
     el.pet.addEventListener("click", petPet);
     el.pet.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -1712,7 +1767,7 @@
     lastTick = Date.now();
 
     if (!state.alive) {
-      say("Tama is gone. Press New pet.");
+      say((state.speciesName || "Tama") + " is gone. Press New pet.");
     } else if (state.egg && !state.hatched) {
       say("A new egg is warming up...");
     } else {

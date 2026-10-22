@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamagotchi</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2d3436;
+      font-family: "Courier New", monospace;
+    }
+
+    .device {
+      background: #c7b9ff;
+      border-radius: 40px;
+      padding: 30px 25px 25px;
+      width: 300px;
+      box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.15), 0 10px 25px rgba(0, 0, 0, 0.4);
+      box-sizing: border-box;
+    }
+
+    .screen {
+      background: #b8d8ba;
+      border: 6px solid #5c6b5e;
+      border-radius: 12px;
+      height: 280px;
+      padding: 12px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      color: #1e2b1f;
+      position: relative;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .bars {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .bars div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 3px 0;
+    }
+
+    .bar {
+      width: 110px;
+      height: 8px;
+      border: 1px solid #1e2b1f;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: #1e2b1f;
+      transition: width 0.4s;
+    }
+
+    .pet-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #pet {
+      font-size: 72px;
+      user-select: none;
+      transition: filter 0.3s;
+    }
+
+    .bounce {
+      animation: bounce 0.6s ease;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-18px); }
+    }
+
+    .sleeping #pet {
+      filter: grayscale(0.4) brightness(0.8);
+    }
+
+    #poop {
+      position: absolute;
+      bottom: 0;
+      right: 8px;
+      font-size: 20px;
+    }
+
+    #message {
+      font-size: 13px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 22px;
+    }
+
+    .btn-wrap {
+      text-align: center;
+    }
+
+    button {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: #8e7cc3;
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #5a4a8a;
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #5a4a8a;
+    }
+
+    .label {
+      font-size: 11px;
+      color: #eee;
+      margin-top: 4px;
+    }
+
+    .reset {
+      display: block;
+      margin: 18px auto 0;
+      background: none;
+      border: 1px solid #eee;
+      color: #eee;
+      border-radius: 6px;
+      width: auto;
+      height: auto;
+      padding: 4px 10px;
+      font-size: 11px;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="device">
+    <div class="screen" id="screen">
+      <div class="top">
+        <span id="name">Tama</span>
+        <span id="age">Age: 0</span>
+      </div>
+
+      <div class="bars">
+        <div>Hunger <span class="bar"><span data-bar="hunger"></span></span></div>
+        <div>Happy <span class="bar"><span data-bar="happy"></span></span></div>
+        <div>Energy <span class="bar"><span data-bar="energy"></span></span></div>
+      </div>
+
+      <div class="pet-area">
+        <div id="pet">🥚</div>
+        <div id="poop"></div>
+      </div>
+
+      <div id="message"></div>
+    </div>
+
+    <div class="buttons">
+      <div class="btn-wrap">
+        <button id="feedBtn" title="Feed">🍙</button>
+        <div class="label">Feed</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="playBtn" title="Play">🎾</button>
+        <div class="label">Play</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="sleepBtn" title="Sleep / Wake">💤</button>
+        <div class="label">Sleep</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="cleanBtn" title="Clean">🧹</button>
+        <div class="label">Clean</div>
+      </div>
+    </div>
+
+    <button class="reset" id="resetBtn">New pet</button>
+  </div>
+
+  <script>
+    const SAVE_KEY = "tamagotchi-save-v1";
+    const MAX_CATCHUP_SECONDS = 3600; // simulate up to 1 hour while the page was closed
+
+    const el = {
+      screen: document.getElementById("screen"),
+      pet: document.getElementById("pet"),
+      poop: document.getElementById("poop"),
+      age: document.getElementById("age"),
+      name: document.getElementById("name"),
+      message: document.getElementById("message"),
+    };
+
+    let state = load() || newPet();
+
+    function newPet() {
+      return {
+        hunger: 80,
+        happy: 80,
+        energy: 80,
+        poop: 0,
+        age: 0,
+        starving: 0,
+        asleep: false,
+        alive: true,
+        lastSeen: Date.now(),
+      };
+    }
+
+    function clamp(v) {
+      return Math.max(0, Math.min(100, v));
+    }
+
+    // dt is in seconds
+    function update(dt) {
+      if (!state.alive) return;
+
+      state.age += dt;
+
+      if (state.asleep) {
+        state.energy = clamp(state.energy + 2 * dt);
+        state.hunger = clamp(state.hunger - 0.02 * dt);
+        state.happy = clamp(state.happy - 0.02 * dt);
+        if (state.energy >= 100) {
+          state.asleep = false;
+          say("Good morning! I'm awake.");
+        }
+      } else {
+        state.energy = clamp(state.energy - 0.03 * dt);
+        state.hunger = clamp(state.hunger - 0.05 * dt);
+        state.happy = clamp(state.happy - 0.04 * dt);
+
+        // Random chance to poop
+        if (Math.random() < 0.01 * dt && state.poop < 4) {
+          state.poop++;
+        }
+      }
+
+      // Too much poop makes the pet unhappy
+      if (state.poop >= 3) {
+        state.happy = clamp(state.happy - 0.05 * dt);
+      }
+
+      // Starvation
+      if (state.hunger <= 0) {
+        state.starving += dt;
+        if (state.starving > 60) {
+          state.alive = false;
+          say("Tama has passed away. Press New pet to start over.");
+        }
+      } else {
+        state.starving = 0;
+      }
+    }
+
+    function say(text) {
+      el.message.textContent = text;
+    }
+
+    function requireAlive() {
+      if (!state.alive) {
+        say("Tama is gone. Press New pet.");
+        return false;
+      }
+      return true;
+    }
+
+    function bounce() {
+      el.pet.classList.remove("bounce");
+      void el.pet.offsetWidth; // restart animation
+      el.pet.classList.add("bounce");
+    }
+
+    function feed() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (state.hunger >= 100) return say("I'm too full!");
+      state.hunger = clamp(state.hunger + 25);
+      state.happy = clamp(state.happy + 3);
+      say("Yum! Thank you!");
+      bounce();
+    }
+
+    function play() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (state.energy < 15) return say("I'm too tired to play.");
+      state.happy = clamp(state.happy + 20);
+      state.energy = clamp(state.energy - 10);
+      state.hunger = clamp(state.hunger - 5);
+      say("Wheee! That was fun!");
+      bounce();
+    }
+
+    function toggleSleep() {
+      if (!requireAlive()) return;
+      if (state.asleep) {
+        state.asleep = false;
+        say("I'm awake!");
+      } else {
+        state.asleep = true;
+        say("Zzz...");
+      }
+    }
+
+    function clean() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (state.poop === 0) return say("Nothing to clean here.");
+      state.poop--;
+      state.happy = clamp(state.happy + 5);
+      say("All clean!");
+      bounce();
+    }
+
+    function getMood() {
+      if (!state.alive) return "💀";
+      if (state.asleep) return "😴";
+      if (state.hunger < 25 || state.happy < 25) return "😢";
+      if (state.energy < 20) return "🥱";
+      if (state.age < 30) return "🐣";
+      return "🐥";
+    }
+
+    function render() {
+      el.pet.textContent = getMood();
+      el.screen.classList.toggle("sleeping", state.asleep);
+
+      el.age.textContent = "Age: " + Math.floor(state.age);
+
+      el.poop.textContent = "💩".repeat(state.poop);
+
+      document.querySelector('[data-bar="hunger"]').style.width = state.hunger + "%";
+      document.querySelector('[data-bar="happy"]').style.width = state.happy + "%";
+      document.querySelector('[data-bar="energy"]').style.width = state.energy + "%";
+    }
+
+    function save() {
+      state.lastSeen = Date.now();
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const saved = JSON.parse(raw);
+
+        // Simulate time that passed while the page was closed
+        const elapsed = Math.min(
+          Math.floor((Date.now() - saved.lastSeen) / 1000),
+          MAX_CATCHUP_SECONDS
+        );
+        for (let i = 0; i < elapsed; i++) {
+          update(1);
+        }
+        return saved;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    document.getElementById("feedBtn").addEventListener("click", feed);
+    document.getElementById("playBtn").addEventListener("click", play);
+    document.getElementById("sleepBtn").addEventListener("click", toggleSleep);
+    document.getElementById("cleanBtn").addEventListener("click", clean);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state = newPet();
+      say("Hello! I'm Tama!");
+      save();
+      render();
+    });
+
+    // Game loop: runs once per second
+    setInterval(() => {
+      update(1);
+      render();
+      save();
+    }, 1000);
+
+    if (!state.alive) {
+      say("Tama is gone. Press New pet.");
+    } else {
+      say("Hello! I'm Tama!");
+    }
+    render();
+  </script>
+</body>
+</html>

@@ -4,157 +4,261 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tamagotchi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    body {
+    :root {
+      --bg-dark: #1d2127;
+      --bg-mid: #2c343b;
+      --shell-top: #d8c8ff;
+      --shell-bottom: #a995dd;
+      --shell-shadow: #6f5eae;
+      --screen-bg: #bfe1bf;
+      --screen-border: #4e6254;
+      --screen-text: #1d2b22;
+      --button-top: #c8b4ff;
+      --button-mid: #9377d9;
+      --button-shadow: #5d4b99;
+      --panel: rgba(26, 43, 33, 0.08);
+      --lcd-green: #2f8a4a;
+      --lcd-green-deep: #174c2d;
+      --white: #f7f4ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
       min-height: 100vh;
+      width: 100%;
+    }
+
+    body {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #2d3436;
-      font-family: "Courier New", monospace;
+      background: radial-gradient(circle at top, var(--bg-mid), var(--bg-dark) 58%);
+      font-family: "Press Start 2P", "Courier New", monospace;
+      color: var(--screen-text);
+      letter-spacing: 0.04em;
     }
 
     .device {
-      background: #c7b9ff;
-      border-radius: 40px;
-      padding: 30px 25px 25px;
-      width: 300px;
-      box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.15), 0 10px 25px rgba(0, 0, 0, 0.4);
-      box-sizing: border-box;
+      position: relative;
+      width: 360px;
+      padding: 22px 18px 20px;
+      background: linear-gradient(145deg, var(--shell-top), var(--shell-bottom));
+      border: 4px solid #4d3f74;
+      border-radius: 34px;
+      box-shadow:
+        inset -8px -8px 0 rgba(88, 70, 125, 0.22),
+        inset 5px 5px 0 rgba(255, 255, 255, 0.25),
+        0 18px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    .device::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      width: 110px;
+      height: 10px;
+      transform: translateX(-50%);
+      background: rgba(95, 72, 134, 0.45);
+      border-radius: 999px;
     }
 
     .screen {
-      background: #b8d8ba;
-      border: 6px solid #5c6b5e;
-      border-radius: 12px;
-      height: 280px;
-      padding: 12px;
-      box-sizing: border-box;
+      position: relative;
       display: flex;
       flex-direction: column;
-      color: #1e2b1f;
-      position: relative;
+      min-height: 320px;
+      padding: 14px 12px 10px;
+      background: linear-gradient(180deg, #c3e8c1 0%, var(--screen-bg) 100%);
+      border: 6px solid var(--screen-border);
+      border-radius: 16px;
+      box-shadow: inset 0 0 0 4px rgba(31, 44, 33, 0.16);
+      overflow: hidden;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.2),
+        rgba(255,255,255,0) 20%,
+        rgba(0,0,0,0.05) 100%
+      );
+      pointer-events: none;
     }
 
     .top {
+      position: relative;
+      z-index: 1;
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
-      font-weight: bold;
+      align-items: center;
+      font-size: 9px;
+      line-height: 1.5;
+      text-transform: uppercase;
     }
 
     .bars {
-      margin-top: 8px;
-      font-size: 12px;
+      position: relative;
+      z-index: 1;
+      margin-top: 16px;
+      font-size: 9px;
+      line-height: 1.5;
+      text-transform: uppercase;
     }
 
     .bars div {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 3px 0;
+      margin: 8px 0;
+      gap: 8px;
     }
 
     .bar {
+      position: relative;
       width: 110px;
-      height: 8px;
-      border: 1px solid #1e2b1f;
+      height: 10px;
+      background: rgba(35, 58, 43, 0.12);
+      border: 2px solid #1d2d24;
+      overflow: hidden;
     }
 
     .bar span {
       display: block;
       height: 100%;
       width: 100%;
-      background: #1e2b1f;
-      transition: width 0.4s;
+      background: linear-gradient(90deg, var(--lcd-green), var(--lcd-green-deep));
+      transition: width 0.35s ease;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
     }
 
     .pet-area {
+      position: relative;
+      z-index: 1;
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      min-height: 150px;
+      margin-top: 8px;
+      border-radius: 10px;
+      background: rgba(25, 51, 37, 0.06);
+      overflow: hidden;
     }
 
     #pet {
-      font-size: 72px;
+      position: relative;
+      font-size: 74px;
       user-select: none;
-      transition: filter 0.3s;
+      filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
+      transform-origin: center bottom;
+      transition: filter 0.2s ease;
     }
 
     .bounce {
-      animation: bounce 0.6s ease;
+      animation: bounce 0.45s steps(2, end);
     }
 
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-18px); }
+      50% { transform: translateY(-14px); }
     }
 
     .sleeping #pet {
-      filter: grayscale(0.4) brightness(0.8);
+      filter: grayscale(0.4) brightness(0.85) drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
     }
 
     #poop {
       position: absolute;
-      bottom: 0;
-      right: 8px;
-      font-size: 20px;
+      right: 10px;
+      bottom: 10px;
+      font-size: 18px;
+      filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.14));
     }
 
     #message {
-      font-size: 13px;
+      position: relative;
+      z-index: 1;
+      min-height: 42px;
+      padding-top: 8px;
+      font-size: 9px;
+      line-height: 1.5;
       text-align: center;
-      min-height: 18px;
+      text-transform: uppercase;
     }
 
     .buttons {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
     }
 
     .btn-wrap {
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     button {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      border: none;
-      background: #8e7cc3;
-      color: white;
+      position: relative;
+      width: 58px;
+      height: 58px;
+      border: 4px solid #4e3a7a;
+      border-radius: 16px;
+      background: linear-gradient(180deg, var(--button-top) 0%, var(--button-mid) 100%);
+      color: var(--white);
+      font: inherit;
       font-size: 22px;
       cursor: pointer;
-      box-shadow: 0 4px 0 #5a4a8a;
+      box-shadow: 0 6px 0 var(--button-shadow);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
     }
 
     button:active {
-      transform: translateY(3px);
-      box-shadow: 0 1px 0 #5a4a8a;
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--button-shadow);
     }
 
     .label {
-      font-size: 11px;
-      color: #eee;
-      margin-top: 4px;
+      margin-top: 8px;
+      font-size: 8px;
+      line-height: 1.5;
+      text-transform: uppercase;
+      color: var(--white);
+      text-align: center;
     }
 
     .reset {
       display: block;
       margin: 18px auto 0;
-      background: none;
-      border: 1px solid #eee;
-      color: #eee;
-      border-radius: 6px;
-      width: auto;
+      min-width: 120px;
       height: auto;
-      padding: 4px 10px;
-      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.08);
+      font-size: 8px;
+      color: var(--white);
       box-shadow: none;
+    }
+
+    @media (max-width: 420px) {
+      .device {
+        width: min(88vw, 360px);
+      }
     }
   </style>
 </head>
@@ -204,7 +308,8 @@
 
   <script>
     const SAVE_KEY = "tamagotchi-save-v1";
-    const MAX_CATCHUP_SECONDS = 3600; // simulate up to 1 hour while the page was closed
+    const MAX_CATCHUP_SECONDS = 3600;
+    const AGE_SECONDS_PER_STAGE = 240; // 1 age step every 4 minutes
 
     const el = {
       screen: document.getElementById("screen"),
@@ -235,11 +340,10 @@
       return Math.max(0, Math.min(100, v));
     }
 
-    // dt is in seconds
     function update(dt) {
       if (!state.alive) return;
 
-      state.age += dt;
+      state.age += dt / AGE_SECONDS_PER_STAGE;
 
       if (state.asleep) {
         state.energy = clamp(state.energy + 2 * dt);
@@ -254,18 +358,15 @@
         state.hunger = clamp(state.hunger - 0.05 * dt);
         state.happy = clamp(state.happy - 0.04 * dt);
 
-        // Random chance to poop
         if (Math.random() < 0.01 * dt && state.poop < 4) {
           state.poop++;
         }
       }
 
-      // Too much poop makes the pet unhappy
       if (state.poop >= 3) {
         state.happy = clamp(state.happy - 0.05 * dt);
       }
 
-      // Starvation
       if (state.hunger <= 0) {
         state.starving += dt;
         if (state.starving > 60) {
@@ -291,7 +392,7 @@
 
     function bounce() {
       el.pet.classList.remove("bounce");
-      void el.pet.offsetWidth; // restart animation
+      void el.pet.offsetWidth;
       el.pet.classList.add("bounce");
     }
 
@@ -342,16 +443,15 @@
       if (state.asleep) return "😴";
       if (state.hunger < 25 || state.happy < 25) return "😢";
       if (state.energy < 20) return "🥱";
-      if (state.age < 30) return "🐣";
-      return "🐥";
+      if (state.age < 2) return "🐣";
+      if (state.age < 5) return "🐥";
+      return "🐤";
     }
 
     function render() {
       el.pet.textContent = getMood();
       el.screen.classList.toggle("sleeping", state.asleep);
-
       el.age.textContent = "Age: " + Math.floor(state.age);
-
       el.poop.textContent = "💩".repeat(state.poop);
 
       document.querySelector('[data-bar="hunger"]').style.width = state.hunger + "%";
@@ -370,7 +470,6 @@
         if (!raw) return null;
         const saved = JSON.parse(raw);
 
-        // Simulate time that passed while the page was closed
         const elapsed = Math.min(
           Math.floor((Date.now() - saved.lastSeen) / 1000),
           MAX_CATCHUP_SECONDS
@@ -395,7 +494,6 @@
       render();
     });
 
-    // Game loop: runs once per second
     setInterval(() => {
       update(1);
       render();

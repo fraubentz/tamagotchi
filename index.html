@@ -41,24 +41,28 @@
     html, body {
       margin: 0;
       min-height: 100vh;
+      min-height: 100dvh;
       width: 100%;
     }
 
     body {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 16px;
       background: radial-gradient(circle at top, var(--bg-mid), var(--bg-dark) 62%);
+      background-attachment: fixed;
       font-family: "Press Start 2P", "Courier New", monospace;
       color: var(--screen-text);
       letter-spacing: 0.04em;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior: none;
     }
 
     .device {
       position: relative;
+      /* margin: auto centers safely: no clipping when taller than the viewport */
+      margin: auto;
       width: 390px;
       max-width: 100%;
       padding: 26px 18px 22px;
@@ -246,6 +250,11 @@
 
     .sleeping .pet-svg {
       filter: grayscale(0.35) brightness(0.8) drop-shadow(3px 3px 0 var(--pet-shadow));
+    }
+
+    .dead .pet-svg {
+      filter: grayscale(1) brightness(0.9) drop-shadow(3px 3px 0 var(--pet-shadow));
+      opacity: 0.85;
     }
 
     #poop {
@@ -469,155 +478,76 @@
     }
 
     @keyframes foodDrop {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -70%) scale(0.7) rotate(-12deg);
-      }
+      0% { opacity: 0; transform: translate(-50%, -70%) scale(0.7) rotate(-12deg); }
       18% { opacity: 1; }
-      56% {
-        opacity: 1;
-        transform: translate(-50%, 28px) scale(1.08) rotate(6deg);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, 68px) scale(0.9) rotate(12deg);
-      }
+      56% { opacity: 1; transform: translate(-50%, 28px) scale(1.08) rotate(6deg); }
+      100% { opacity: 0; transform: translate(-50%, 68px) scale(0.9) rotate(12deg); }
     }
 
     @keyframes ballToss {
-      0% {
-        opacity: 0;
-        transform: translate(0, 0) scale(0.5);
-      }
-      18%, 60% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: translate(130px, -52px) scale(1.2);
-      }
+      0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+      18%, 60% { opacity: 1; }
+      100% { opacity: 0; transform: translate(130px, -52px) scale(1.2); }
     }
 
     @keyframes broomSweep {
-      0% {
-        opacity: 0;
-        transform: translate(-10px, 18px) rotate(20deg) scale(0.7);
-      }
-      18%, 72% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: translate(200px, -12px) rotate(-18deg) scale(0.9);
-      }
+      0% { opacity: 0; transform: translate(-10px, 18px) rotate(20deg) scale(0.7); }
+      18%, 72% { opacity: 1; }
+      100% { opacity: 0; transform: translate(200px, -12px) rotate(-18deg) scale(0.9); }
     }
 
     @keyframes dustScatter {
-      0% {
-        opacity: 0;
-        transform: translate(0, 0) scale(0.8);
-      }
+      0% { opacity: 0; transform: translate(0, 0) scale(0.8); }
       20% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(-42px, -18px) scale(1.3);
-      }
+      100% { opacity: 0; transform: translate(-42px, -18px) scale(1.3); }
     }
 
     @keyframes poopScatter {
-      0% {
-        opacity: 0;
-        transform: translate(0, 0) scale(0.5);
-      }
+      0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
       16% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(56px, -18px) scale(1.2);
-      }
+      100% { opacity: 0; transform: translate(56px, -18px) scale(1.2); }
     }
 
     @keyframes splashBurst {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-      }
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
       20% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1.5);
-      }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
     }
 
     @keyframes dropFall {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -10px) scale(0.5);
-      }
+      0% { opacity: 0; transform: translate(-50%, -10px) scale(0.5); }
       20% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, 58px) scale(1.2);
-      }
+      100% { opacity: 0; transform: translate(-50%, 58px) scale(1.2); }
     }
 
     @keyframes bubbleRise {
-      0% {
-        opacity: 0;
-        transform: translate(0, 14px) scale(0.5);
-      }
+      0% { opacity: 0; transform: translate(0, 14px) scale(0.5); }
       12% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(30px, -26px) scale(1.2);
-      }
+      100% { opacity: 0; transform: translate(30px, -26px) scale(1.2); }
     }
 
     @keyframes starJump {
-      0% {
-        opacity: 0;
-        transform: translate(-12px, 10px) scale(0.4) rotate(-12deg);
-      }
+      0% { opacity: 0; transform: translate(-12px, 10px) scale(0.4) rotate(-12deg); }
       20%, 75% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(90px, -40px) scale(1.2) rotate(18deg);
-      }
+      100% { opacity: 0; transform: translate(90px, -40px) scale(1.2) rotate(18deg); }
     }
 
     @keyframes sparkBurst {
-      0% {
-        opacity: 0;
-        transform: translate(0, 0) scale(0.4);
-      }
+      0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
       20% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(30px, -32px) scale(1.5);
-      }
+      100% { opacity: 0; transform: translate(30px, -32px) scale(1.5); }
     }
 
     @keyframes fartCloud {
-      0% {
-        opacity: 0;
-        transform: translate(0, 0) scale(0.6);
-      }
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
       20% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(42px, -12px) scale(1.5);
-      }
+      100% { opacity: 0; transform: translate(42px, -12px) scale(1.5); }
     }
 
     @keyframes fartPop {
-      0% {
-        opacity: 0;
-        transform: translate(0, 8px) scale(0.5);
-      }
+      0% { opacity: 0; transform: translate(0, 8px) scale(0.5); }
       20%, 80% { opacity: 1; }
-      100% {
-        opacity: 0;
-        transform: translate(34px, -12px) scale(1.2);
-      }
+      100% { opacity: 0; transform: translate(34px, -12px) scale(1.2); }
     }
 
     #message {
@@ -705,6 +635,11 @@
       box-shadow: none;
     }
 
+    .reset.armed {
+      background: rgba(190, 60, 40, 0.55);
+      border-color: #fff;
+    }
+
     @media (max-width: 420px) {
       .device { width: min(92vw, 390px); }
       .buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -729,8 +664,8 @@
 
     <div class="screen" id="screen">
       <div class="top">
-        <span id="name" aria-live="polite">Egg</span>
-        <span id="age" aria-live="polite">Age: 0</span>
+        <span id="name">Egg</span>
+        <span id="age">Age: 0</span>
       </div>
 
       <div class="bars" aria-label="Pet status bars">
@@ -739,7 +674,8 @@
         <div>Energy <span class="bar"><span data-bar="energy"></span></span></div>
       </div>
 
-      <div class="pet-area" id="petArea" aria-live="polite">
+      <!-- No aria-live here: its contents refresh constantly. Updates are announced via #message only. -->
+      <div class="pet-area" id="petArea">
         <div id="pet"></div>
         <div id="poop" aria-label="Poop pile"></div>
         <div class="action-layer" id="actionLayer" aria-hidden="true"></div>
@@ -783,6 +719,8 @@
     const MAX_CATCHUP_SECONDS = 3600;
     const AGE_SECONDS_PER_STAGE = 240;
     const HATCH_SECONDS = 4;
+    const BATH_COOLDOWN_MS = 15000;
+    const SLEEP_BLOCK_ENERGY = 90;
 
     const speciesOptions = [
       { name: "Pip", primary: "#7ec6a8", secondary: "#dff9ee", accent: "#2d7a5d", ears: "short", tail: "round" },
@@ -802,9 +740,15 @@
       name: document.getElementById("name"),
       message: document.getElementById("message"),
       actionLayer: document.getElementById("actionLayer"),
+      resetBtn: document.getElementById("resetBtn"),
+      bars: {
+        hunger: document.querySelector('[data-bar="hunger"]'),
+        happy: document.querySelector('[data-bar="happy"]'),
+        energy: document.querySelector('[data-bar="energy"]'),
+      },
     };
 
-    let state = load() || newPet();
+    /* ---------- State ---------- */
 
     function randomSpecies() {
       return speciesOptions[Math.floor(Math.random() * speciesOptions.length)];
@@ -822,6 +766,7 @@
         asleep: false,
         alive: true,
         lastSeen: Date.now(),
+        lastBath: 0,
         speciesInfo: species,
         speciesName: species.name,
         egg: true,
@@ -831,12 +776,44 @@
       };
     }
 
+    // Only reads and parses the save. Catch-up happens later, once `state` exists.
+    function load() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const saved = JSON.parse(raw);
+        if (!saved || typeof saved !== "object") return null;
+        // Merge over defaults so older saves missing newer fields still work
+        return Object.assign(newPet(), saved);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function save() {
+      try {
+        state.lastSeen = Date.now();
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      } catch (e) {
+        /* storage unavailable (private mode, quota): the game still runs */
+      }
+    }
+
+    let state = load() || newPet();
+    let carry = 0;           // leftover fractional seconds between ticks
+    let lastTick = Date.now();
+
     function clamp(v) {
       return Math.max(0, Math.min(100, v));
     }
 
     function say(text) {
       el.message.textContent = text;
+    }
+
+    // Writes only when the value changed, so screen readers aren't re-notified every tick
+    function setText(node, value) {
+      if (node.textContent !== value) node.textContent = value;
     }
 
     function requireAlive() {
@@ -857,42 +834,55 @@
       el.pet.classList.add("bounce");
     }
 
-    function playTone(type) {
+    /* ---------- Audio (one shared context) ---------- */
+
+    let audioCtx = null;
+
+    function getAudio() {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const audioContext = new AudioCtx();
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-
-      const frequencies = {
-        feed: [440, 660],
-        play: [330, 510],
-        clean: [180, 240],
-        bath: [540, 780],
-        train: [390, 660, 880],
-        fart: [74, 54],
-      };
-
-      osc.type = type === "fart" ? "square" : "triangle";
-      osc.frequency.setValueAtTime(frequencies[type][0], audioContext.currentTime);
-
-      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.06, audioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + (type === "fart" ? 0.22 : 0.26));
-
-      if (frequencies[type].length > 1) {
-        const second = frequencies[type][1];
-        osc.frequency.exponentialRampToValueAtTime(second, audioContext.currentTime + 0.08);
-      }
-
-      osc.start();
-      osc.stop(audioContext.currentTime + (type === "fart" ? 0.28 : 0.32));
-      osc.onended = () => audioContext.close();
+      if (!AudioCtx) return null;
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
     }
+
+    function playTone(type) {
+      try {
+        const ctx = getAudio();
+        if (!ctx) return;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const frequencies = {
+          feed: [440, 660],
+          play: [330, 510],
+          clean: [180, 240],
+          bath: [540, 780],
+          train: [390, 660, 880],
+          fart: [74, 54],
+        };
+        const f = frequencies[type];
+        const t = ctx.currentTime;
+
+        osc.type = type === "fart" ? "square" : "triangle";
+        osc.frequency.setValueAtTime(f[0], t);
+        osc.frequency.exponentialRampToValueAtTime(f[1], t + 0.08);
+
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + (type === "fart" ? 0.22 : 0.26));
+
+        osc.start(t);
+        osc.stop(t + (type === "fart" ? 0.28 : 0.32));
+      } catch (e) {
+        /* audio is optional */
+      }
+    }
+
+    /* ---------- Action animations ---------- */
 
     function triggerAction(type) {
       const action = document.createElement("div");
@@ -925,25 +915,28 @@
       }, 1000);
     }
 
-    function triggerFart() {
+    function triggerFart(silent) {
       if (state.asleep || !state.alive || (state.egg && !state.hatched)) return;
       state.happy = clamp(state.happy - 2);
+      state.fartCooldown = 8 + Math.random() * 15;
+      if (silent) return; // catching up after time away: no sound or animation
       say("Pfft! Someone needs a little privacy.");
       triggerAction("fart");
       playTone("fart");
       bounce();
-      state.fartCooldown = 8 + Math.random() * 15;
     }
 
-    function hatchPet() {
+    function hatchPet(silent) {
       state.egg = false;
       state.hatched = true;
       state.hatchTimer = 0;
       say("Peep! Hello, I'm " + state.speciesName + "!");
-      bounce();
+      if (!silent) bounce();
     }
 
-    function update(dt) {
+    /* ---------- Simulation ---------- */
+
+    function update(dt, silent) {
       if (!state.alive) return;
 
       if (state.egg && !state.hatched) {
@@ -952,7 +945,7 @@
         state.happy = clamp(state.happy - 0.01 * dt);
 
         if (state.hatchTimer >= HATCH_SECONDS) {
-          hatchPet();
+          hatchPet(silent);
         }
         return;
       }
@@ -980,7 +973,7 @@
         if (state.fartCooldown <= 0) {
           const shouldFart = state.poop > 0 || Math.random() < 0.35;
           if (shouldFart) {
-            triggerFart();
+            triggerFart(silent);
           } else {
             state.fartCooldown = 8 + Math.random() * 15;
           }
@@ -1001,6 +994,28 @@
         state.starving = 0;
       }
     }
+
+    // Advances the simulation by real elapsed seconds, in 1-second steps.
+    // Long gaps (hidden tab, reopened page) run silently so nothing spams sounds.
+    function advance(seconds) {
+      const silent = seconds > 3;
+      carry += Math.min(seconds, MAX_CATCHUP_SECONDS);
+      while (carry >= 1) {
+        update(1, silent);
+        carry -= 1;
+      }
+    }
+
+    function tick() {
+      const now = Date.now();
+      const elapsed = Math.max(0, (now - lastTick) / 1000);
+      lastTick = now;
+      advance(elapsed);
+      render();
+      save();
+    }
+
+    /* ---------- Actions ---------- */
 
     function feed() {
       if (!requireAlive()) return;
@@ -1033,6 +1048,7 @@
         state.asleep = false;
         say("I'm awake!");
       } else {
+        if (state.energy >= SLEEP_BLOCK_ENERGY) return say("I'm not sleepy yet.");
         state.asleep = true;
         say("Zzz...");
       }
@@ -1053,8 +1069,13 @@
     function bath() {
       if (!requireAlive()) return;
       if (state.asleep) return say("Shh... I'm sleeping.");
+      if (Date.now() - (state.lastBath || 0) < BATH_COOLDOWN_MS) {
+        return say("Already squeaky clean!");
+      }
+      state.lastBath = Date.now();
       state.happy = clamp(state.happy + 12);
       state.energy = clamp(state.energy + 6);
+      state.hunger = clamp(state.hunger - 3);
       say("Fresh and clean!");
       triggerAction("bath");
       playTone("bath");
@@ -1073,6 +1094,8 @@
       playTone("train");
       bounce();
     }
+
+    /* ---------- Rendering ---------- */
 
     function getEarMarkup(species) {
       if (species.ears === "long") {
@@ -1132,15 +1155,34 @@
 
       const species = state.speciesInfo || speciesOptions[0];
       const mood = getMoodState();
+      const dead = mood === "dead";
       const asleep = mood === "sleepy";
       const sad = mood === "sad";
       const tired = mood === "tired";
       const mouthOpen = sad || tired || state.hunger < 20;
       const eyeY = asleep ? 69 : 64;
       const eyelids = asleep ? "<path d='M64 68 Q70 64 76 68' fill='none' stroke='#1d2b22' stroke-width='3' stroke-linecap='round' /><path d='M94 68 Q100 64 106 68' fill='none' stroke='#1d2b22' stroke-width='3' stroke-linecap='round' />" : "";
+      const xEyes = `
+        <path d="M65 59 L75 69 M75 59 L65 69" fill="none" stroke="#1d2b22" stroke-width="3" stroke-linecap="round"/>
+        <path d="M95 59 L105 69 M105 59 L95 69" fill="none" stroke="#1d2b22" stroke-width="3" stroke-linecap="round"/>
+      `;
+
+      let eyes = "";
+      if (dead) {
+        eyes = xEyes;
+      } else if (asleep) {
+        eyes = eyelids;
+      } else {
+        eyes = `<circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/><circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>
+                <circle cx="68" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/><circle cx="98" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/>`;
+      }
+
+      const mouth = dead
+        ? `<path d="M76 94 Q85 89 94 94" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>`
+        : `<path d="M74 ${mouthOpen ? 88 : 92} Q85 ${mouthOpen ? 98 : 96} 96 ${mouthOpen ? 88 : 92}" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>`;
 
       return `
-        <svg class="pet-svg" viewBox="0 0 170 140" aria-label="${state.speciesName}" role="img">
+        <svg class="pet-svg" viewBox="0 0 170 140" aria-label="${dead ? state.speciesName + " (gone)" : state.speciesName}" role="img">
           <g>
             <ellipse cx="84" cy="104" rx="54" ry="12" fill="rgba(0,0,0,0.10)"/>
             ${getTailMarkup(species)}
@@ -1148,10 +1190,8 @@
             <ellipse cx="85" cy="82" rx="38" ry="32" fill="${species.primary}"/>
             <ellipse cx="85" cy="82" rx="31" ry="25" fill="${species.secondary}" opacity="0.8"/>
             <path d="M58 95 Q85 106 112 95" fill="none" stroke="${species.accent}" stroke-width="4" stroke-linecap="round"/>
-            ${eyelids}
-            ${asleep ? "" : `<circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/><circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>`}
-            ${!asleep ? `<circle cx="68" cy="${eyeY-2}" r="2" fill="#FFFFFF"/><circle cx="98" cy="${eyeY-2}" r="2" fill="#FFFFFF"/>` : ""}
-            <path d="M74 ${mouthOpen ? 88 : 92} Q85 ${mouthOpen ? 98 : 96} 96 ${mouthOpen ? 88 : 92}" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>
+            ${eyes}
+            ${mouth}
             ${sad ? '<path d="M61 102 Q85 109 109 102" fill="none" stroke="#1f2d2a" stroke-width="3" stroke-linecap="round"/>' : ''}
             ${tired ? '<path d="M70 74 Q85 79 100 74" fill="none" stroke="rgba(29,43,34,0.6)" stroke-width="3" stroke-linecap="round"/>' : ''}
             <circle cx="65" cy="80" r="3" fill="${species.accent}" opacity="0.28"/>
@@ -1161,55 +1201,82 @@
       `;
     }
 
+    let lastSvg = "";
+    let renderedPoop = -1;
+
     function renderPoop() {
       const count = Math.max(0, state.poop);
-      const blobs = Array.from({ length: count }, (_, index) => {
+      if (count === renderedPoop) return; // unchanged: leave the wiggle animation alone
+      renderedPoop = count;
+      el.poop.innerHTML = Array.from({ length: count }, (_, index) => {
         const size = 10 + (index % 3) * 4;
         const height = 8 + (index % 2) * 4;
         const rotation = -18 + (index * 13) % 36;
         const offset = index * 4;
         return `<span class="poop-blob" style="--poop-size:${size}px; --poop-height:${height}px; --poop-rotation:${rotation}deg; margin-left:${index > 0 ? '-2px' : '0'}; transform: translateX(${offset}px) rotate(${rotation}deg);"></span>`;
       }).join("");
-      el.poop.innerHTML = blobs;
     }
 
     function render() {
-      el.pet.innerHTML = getPetSvg();
-      el.screen.classList.toggle("sleeping", state.asleep && state.hatched);
-      el.screen.classList.toggle("egg", state.egg && !state.hatched);
-      el.screen.classList.toggle("hatching", state.egg && !state.hatched && state.hatchTimer > HATCH_SECONDS * 0.75);
-      el.name.textContent = state.egg && !state.hatched ? "Egg" : (state.speciesName || "Tama");
-      el.age.textContent = "Age: " + Math.floor(state.age);
+      const svg = getPetSvg();
+      if (svg !== lastSvg) {
+        el.pet.innerHTML = svg;
+        lastSvg = svg;
+      }
+
+      const inEgg = state.egg && !state.hatched;
+      el.screen.classList.toggle("sleeping", state.alive && state.asleep && state.hatched);
+      el.screen.classList.toggle("dead", !state.alive && state.hatched);
+      el.screen.classList.toggle("egg", inEgg);
+      el.screen.classList.toggle("hatching", inEgg && state.hatchTimer > HATCH_SECONDS * 0.75);
+
+      setText(el.name, inEgg ? "Egg" : (state.speciesName || "Tama"));
+      setText(el.age, "Age: " + Math.floor(state.age));
       renderPoop();
 
-      document.querySelector('[data-bar="hunger"]').style.width = state.hunger + "%";
-      document.querySelector('[data-bar="happy"]').style.width = state.happy + "%";
-      document.querySelector('[data-bar="energy"]').style.width = state.energy + "%";
+      el.bars.hunger.style.width = state.hunger + "%";
+      el.bars.happy.style.width = state.happy + "%";
+      el.bars.energy.style.width = state.energy + "%";
     }
 
-    function save() {
-      state.lastSeen = Date.now();
-      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    /* ---------- New pet (two-step confirm) ---------- */
+
+    let resetArmed = false;
+    let resetTimer = null;
+
+    function disarmReset() {
+      resetArmed = false;
+      clearTimeout(resetTimer);
+      el.resetBtn.classList.remove("armed");
+      el.resetBtn.textContent = "New pet";
     }
 
-    function load() {
-      try {
-        const raw = localStorage.getItem(SAVE_KEY);
-        if (!raw) return null;
-        const saved = JSON.parse(raw);
+    function startOver() {
+      state = newPet();
+      carry = 0;
+      lastTick = Date.now();
+      renderedPoop = -1;
+      lastSvg = "";
+      say("A new egg is warming up...");
+      save();
+      render();
+    }
 
-        const elapsed = Math.min(
-          Math.floor((Date.now() - saved.lastSeen) / 1000),
-          MAX_CATCHUP_SECONDS
-        );
-        for (let i = 0; i < elapsed; i++) {
-          update(1);
-        }
-        return saved;
-      } catch (e) {
-        return null;
+    el.resetBtn.addEventListener("click", () => {
+      const needsConfirm = state.alive && !(state.egg && !state.hatched);
+      if (needsConfirm && !resetArmed) {
+        resetArmed = true;
+        el.resetBtn.classList.add("armed");
+        el.resetBtn.textContent = "Confirm?";
+        say("Start over? Tap again to confirm.");
+        resetTimer = setTimeout(disarmReset, 3000);
+        return;
       }
-    }
+      disarmReset();
+      startOver();
+    });
+
+    /* ---------- Wiring ---------- */
 
     document.getElementById("feedBtn").addEventListener("click", feed);
     document.getElementById("playBtn").addEventListener("click", play);
@@ -1217,18 +1284,19 @@
     document.getElementById("cleanBtn").addEventListener("click", clean);
     document.getElementById("bathBtn").addEventListener("click", bath);
     document.getElementById("trainBtn").addEventListener("click", train);
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      state = newPet();
-      say("A new egg is warming up...");
-      save();
-      render();
+
+    // Real-time based ticking: background tabs get throttled, so catch up on return
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) tick();
     });
 
-    setInterval(() => {
-      update(1);
-      render();
-      save();
-    }, 1000);
+    setInterval(tick, 1000);
+
+    /* ---------- Startup ---------- */
+
+    // Catch up on the time away (capped), now that `state` exists
+    advance(Math.min((Date.now() - state.lastSeen) / 1000, MAX_CATCHUP_SECONDS));
+    lastTick = Date.now();
 
     if (!state.alive) {
       say("Tama is gone. Press New pet.");

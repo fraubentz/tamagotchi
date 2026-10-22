@@ -1072,10 +1072,12 @@
       state.care = clamp(state.care + (sample - state.care) * Math.min(1, dt / CARE_HORIZON_SECONDS));
       checkEvolution(silent);
 
-      // Sickness: neglect raises the risk; illness drains mood and is fatal if left untreated
+      // Sickness: neglect raises the risk; illness drains mood and is fatal if left untreated.
+      // Grace period: while you're away (silent catch-up), nobody gets sick, and a sick
+      // pet's illness clock and extra drain are paused until you're back.
       if (state.immunity > 0) state.immunity -= dt;
       if (!state.sick) {
-        if (state.immunity <= 0) {
+        if (state.immunity <= 0 && !silent) {
           const risk = 0.0001
             + (state.poop >= 3 ? 0.002 : 0)
             + (state.hunger < 20 ? 0.002 : 0)
@@ -1090,9 +1092,11 @@
           }
         }
       } else {
-        state.sickTimer += dt;
-        state.happy = clamp(state.happy - 0.06 * dt);
-        state.energy = clamp(state.energy - 0.02 * dt);
+        if (!silent) {
+          state.sickTimer += dt;
+          state.happy = clamp(state.happy - 0.06 * dt);
+          state.energy = clamp(state.energy - 0.02 * dt);
+        }
         if (state.sickTimer > SICK_DEATH_SECONDS) {
           state.alive = false;
           say("Tama has passed away from illness. Press New pet to start over.");

@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1c2329">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';">
   <title>Tamagotchi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +30,10 @@
       --screen-panel: rgba(25, 46, 36, 0.06);
       --device-shadow: rgba(0, 0, 0, 0.32);
       --pet-shadow: rgba(22, 40, 31, 0.15);
+      --poop-dark: #5c3829;
+      --poop-mid: #7d533d;
+      --poop-light: #a56d4b;
+      --fart-cloud: rgba(130, 145, 160, 0.55);
     }
 
     * { box-sizing: border-box; }
@@ -46,11 +53,14 @@
       color: var(--screen-text);
       letter-spacing: 0.04em;
       overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
     }
 
     .device {
       position: relative;
       width: 390px;
+      max-width: 100%;
       padding: 26px 18px 22px;
       background: linear-gradient(180deg, var(--shell-top) 0%, var(--shell-mid) 25%, var(--shell-bottom) 100%);
       border: 5px solid var(--shell-border);
@@ -240,22 +250,59 @@
 
     #poop {
       position: absolute;
-      right: 14px;
-      bottom: 12px;
+      right: 10px;
+      bottom: 10px;
       display: flex;
       align-items: flex-end;
-      gap: 3px;
-      min-height: 10px;
+      justify-content: flex-end;
+      gap: 4px;
+      width: 92px;
+      height: 44px;
       z-index: 1;
+      transform: translateY(0);
     }
 
-    .poop-dot {
+    .poop-blob {
+      position: relative;
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: var(--poop-size, 12px);
+      height: var(--poop-height, 10px);
+      transform: rotate(var(--poop-rotation, 0deg));
+      border-radius: 58% 42% 60% 40% / 60% 46% 54% 40%;
+      background: linear-gradient(145deg, var(--poop-light) 0%, var(--poop-mid) 36%, var(--poop-dark) 100%);
+      box-shadow:
+        inset 5px 1px 0 rgba(255,255,255,0.13),
+        inset -4px -5px 0 rgba(42, 30, 25, 0.18),
+        0 2px 0 rgba(66, 42, 28, 0.2);
+      animation: poopWiggle 1.8s ease-in-out infinite alternate;
+    }
+
+    .poop-blob::before,
+    .poop-blob::after {
+      content: "";
+      position: absolute;
       border-radius: 50%;
-      background: #6d4c3a;
-      opacity: 0.8;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .poop-blob::before {
+      width: 28%;
+      height: 24%;
+      left: 18%;
+      top: 18%;
+    }
+
+    .poop-blob::after {
+      width: 16%;
+      height: 18%;
+      right: 20%;
+      bottom: 18%;
+      background: rgba(0,0,0,0.12);
+    }
+
+    @keyframes poopWiggle {
+      0% { transform: rotate(var(--poop-rotation, 0deg)) translateY(0); }
+      100% { transform: rotate(calc(var(--poop-rotation, 0deg) + 10deg)) translateY(2px); }
     }
 
     .action-layer {
@@ -347,6 +394,49 @@
       font-size: 28px;
       transform: scale(0.4) rotate(-12deg);
       animation: starJump 0.9s ease-in-out forwards;
+    }
+
+    .action.fart .fart-cloud {
+      position: absolute;
+      right: 20%;
+      bottom: 24%;
+      width: 74px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(138, 150, 160, 0.55), rgba(82, 89, 98, 0.32));
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.08);
+      animation: fartCloud 1s ease-out forwards;
+    }
+
+    .action.fart .fart-cloud::before,
+    .action.fart .fart-cloud::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(153, 163, 172, 0.5), rgba(88, 96, 104, 0.22));
+    }
+
+    .action.fart .fart-cloud::before {
+      width: 48px;
+      height: 28px;
+      left: 8px;
+      top: -12px;
+    }
+
+    .action.fart .fart-cloud::after {
+      width: 36px;
+      height: 22px;
+      right: 12px;
+      top: 12px;
+    }
+
+    .action.fart .fart-label {
+      position: absolute;
+      right: 19%;
+      bottom: 34%;
+      font-size: 18px;
+      transform: scale(0.8);
+      animation: fartPop 1s ease-out forwards;
     }
 
     @keyframes foodDrop {
@@ -441,6 +531,30 @@
       }
     }
 
+    @keyframes fartCloud {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.6);
+      }
+      20% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(42px, -12px) scale(1.5);
+      }
+    }
+
+    @keyframes fartPop {
+      0% {
+        opacity: 0;
+        transform: translate(0, 8px) scale(0.5);
+      }
+      20%, 80% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(34px, -12px) scale(1.2);
+      }
+    }
+
     #message {
       position: relative;
       z-index: 1;
@@ -482,8 +596,19 @@
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 6px 0 var(--button-shadow);
-      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
       text-shadow: 0 2px 0 rgba(0,0,0,0.12);
+      touch-action: manipulation;
+    }
+
+    button:hover,
+    button:focus-visible {
+      filter: brightness(1.03);
+    }
+
+    button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.9);
+      outline-offset: 3px;
     }
 
     button:active {
@@ -516,66 +641,76 @@
     }
 
     @media (max-width: 420px) {
-      .device { width: min(90vw, 390px); }
+      .device { width: min(92vw, 390px); }
       .buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .bar { width: min(44vw, 126px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="device">
+  <div class="device" aria-label="Tamagotchi game device">
     <div class="speaker" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span>
     </div>
 
     <div class="screen" id="screen">
       <div class="top">
-        <span id="name">Egg</span>
-        <span id="age">Age: 0</span>
+        <span id="name" aria-live="polite">Egg</span>
+        <span id="age" aria-live="polite">Age: 0</span>
       </div>
 
-      <div class="bars">
+      <div class="bars" aria-label="Pet status bars">
         <div>Hunger <span class="bar"><span data-bar="hunger"></span></span></div>
         <div>Happy <span class="bar"><span data-bar="happy"></span></span></div>
         <div>Energy <span class="bar"><span data-bar="energy"></span></span></div>
       </div>
 
-      <div class="pet-area" id="petArea">
+      <div class="pet-area" id="petArea" aria-live="polite">
         <div id="pet"></div>
-        <div id="poop"></div>
-        <div class="action-layer" id="actionLayer"></div>
+        <div id="poop" aria-label="Poop pile"></div>
+        <div class="action-layer" id="actionLayer" aria-hidden="true"></div>
       </div>
 
-      <div id="message"></div>
+      <div id="message" aria-live="polite" aria-atomic="true"></div>
     </div>
 
-    <div class="buttons">
+    <div class="buttons" aria-label="Actions">
       <div class="btn-wrap">
-        <button id="feedBtn" title="Feed">F</button>
+        <button id="feedBtn" type="button" title="Feed" aria-label="Feed the pet">F</button>
         <div class="label">Feed</div>
       </div>
       <div class="btn-wrap">
-        <button id="playBtn" title="Play">P</button>
+        <button id="playBtn" type="button" title="Play" aria-label="Play with the pet">P</button>
         <div class="label">Play</div>
       </div>
       <div class="btn-wrap">
-        <button id="sleepBtn" title="Sleep / Wake">Z</button>
+        <button id="sleepBtn" type="button" title="Sleep / Wake" aria-label="Put the pet to sleep or wake it">Z</button>
         <div class="label">Sleep</div>
       </div>
       <div class="btn-wrap">
-        <button id="cleanBtn" title="Clean">C</button>
+        <button id="cleanBtn" type="button" title="Clean" aria-label="Clean up poop">C</button>
         <div class="label">Clean</div>
       </div>
       <div class="btn-wrap">
-        <button id="bathBtn" title="Bath">B</button>
+        <button id="bathBtn" type="button" title="Bath" aria-label="Give the pet a bath">B</button>
         <div class="label">Bath</div>
       </div>
       <div class="btn-wrap">
-        <button id="trainBtn" title="Train">T</button>
+        <button id="trainBtn" type="button" title="Train" aria-label="Train the pet">T</button>
         <div class="label">Train</div>
       </div>
     </div>
 
-    <button class="reset" id="resetBtn">New pet</button>
+    <button class="reset" id="resetBtn" type="button" aria-label="Start a new pet">New pet</button>
   </div>
 
   <script>
@@ -627,6 +762,7 @@
         egg: true,
         hatched: false,
         hatchTimer: 0,
+        fartCooldown: 7 + Math.random() * 10,
       };
     }
 
@@ -670,13 +806,24 @@
         action.innerHTML = '<div class="splash"></div><div class="drop"></div>';
       } else if (type === "train") {
         action.innerHTML = '<div class="star">⭐</div>';
+      } else if (type === "fart") {
+        action.innerHTML = '<div class="fart-cloud" aria-hidden="true"></div><div class="fart-label" aria-hidden="true">💨</div>';
       }
 
       el.actionLayer.innerHTML = "";
       el.actionLayer.appendChild(action);
       setTimeout(() => {
         if (action.parentNode) action.remove();
-      }, 900);
+      }, 1000);
+    }
+
+    function triggerFart() {
+      if (state.asleep || !state.alive || (state.egg && !state.hatched)) return;
+      state.happy = clamp(state.happy - 2);
+      say("Pfft! Someone needs a little privacy.");
+      triggerAction("fart");
+      bounce();
+      state.fartCooldown = 8 + Math.random() * 15;
     }
 
     function hatchPet() {
@@ -718,6 +865,16 @@
 
         if (Math.random() < 0.01 * dt && state.poop < 4) {
           state.poop++;
+        }
+
+        state.fartCooldown -= dt;
+        if (state.fartCooldown <= 0) {
+          const shouldFart = state.poop > 0 || Math.random() < 0.35;
+          if (shouldFart) {
+            triggerFart();
+          } else {
+            state.fartCooldown = 8 + Math.random() * 15;
+          }
         }
       }
 
@@ -890,6 +1047,18 @@
       `;
     }
 
+    function renderPoop() {
+      const count = Math.max(0, state.poop);
+      const blobs = Array.from({ length: count }, (_, index) => {
+        const size = 10 + (index % 3) * 4;
+        const height = 8 + (index % 2) * 4;
+        const rotation = -18 + (index * 13) % 36;
+        const offset = index * 4;
+        return `<span class="poop-blob" style="--poop-size:${size}px; --poop-height:${height}px; --poop-rotation:${rotation}deg; margin-left:${index > 0 ? '-2px' : '0'}; transform: translateX(${offset}px) rotate(${rotation}deg);"></span>`;
+      }).join("");
+      el.poop.innerHTML = blobs;
+    }
+
     function render() {
       el.pet.innerHTML = getPetSvg();
       el.screen.classList.toggle("sleeping", state.asleep && state.hatched);
@@ -897,7 +1066,7 @@
       el.screen.classList.toggle("hatching", state.egg && !state.hatched && state.hatchTimer > HATCH_SECONDS * 0.75);
       el.name.textContent = state.egg && !state.hatched ? "Egg" : (state.speciesName || "Tama");
       el.age.textContent = "Age: " + Math.floor(state.age);
-      el.poop.innerHTML = Array.from({ length: Math.max(0, state.poop) }, () => '<span class="poop-dot"></span>').join("");
+      renderPoop();
 
       document.querySelector('[data-bar="hunger"]').style.width = state.hunger + "%";
       document.querySelector('[data-bar="happy"]').style.width = state.happy + "%";

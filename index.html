@@ -26,6 +26,7 @@
       --white: #f9f5e8;
       --screen-panel: rgba(19, 41, 28, 0.05);
       --device-shadow: rgba(0, 0, 0, 0.32);
+      --pet-shadow: rgba(21, 42, 28, 0.15);
     }
 
     * {
@@ -205,13 +206,22 @@
 
     #pet {
       position: relative;
-      font-size: 92px;
-      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 170px;
+      height: 140px;
       user-select: none;
-      filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
       transform-origin: center bottom;
       transition: filter 0.2s ease, transform 0.2s ease;
       z-index: 1;
+    }
+
+    .pet-svg {
+      display: block;
+      width: 170px;
+      height: 140px;
+      filter: drop-shadow(3px 3px 0 var(--pet-shadow));
     }
 
     .egg #pet {
@@ -241,17 +251,28 @@
       50% { transform: translateY(-12px); }
     }
 
-    .sleeping #pet {
-      filter: grayscale(0.4) brightness(0.85) drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
+    .sleeping .pet-svg {
+      filter: grayscale(0.4) brightness(0.85) drop-shadow(3px 3px 0 var(--pet-shadow));
     }
 
     #poop {
       position: absolute;
       right: 18px;
       bottom: 14px;
-      font-size: 20px;
-      filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.14));
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      min-height: 10px;
       z-index: 1;
+    }
+
+    .poop-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6a4b39;
+      opacity: 0.8;
     }
 
     #message {
@@ -291,7 +312,8 @@
       background: linear-gradient(180deg, var(--button-top) 0%, var(--button-mid) 100%);
       color: var(--white);
       font: inherit;
-      font-size: 24px;
+      font-size: 18px;
+      font-weight: 700;
       cursor: pointer;
       box-shadow: 0 6px 0 var(--button-shadow);
       transition: transform 0.08s ease, box-shadow 0.08s ease;
@@ -342,7 +364,7 @@
 
     <div class="screen" id="screen">
       <div class="top">
-        <span id="name">Tama</span>
+        <span id="name">Egg</span>
         <span id="age">Age: 0</span>
       </div>
 
@@ -353,7 +375,7 @@
       </div>
 
       <div class="pet-area">
-        <div id="pet">🥚</div>
+        <div id="pet"></div>
         <div id="poop"></div>
       </div>
 
@@ -362,19 +384,19 @@
 
     <div class="buttons">
       <div class="btn-wrap">
-        <button id="feedBtn" title="Feed">🍙</button>
+        <button id="feedBtn" title="Feed">F</button>
         <div class="label">Feed</div>
       </div>
       <div class="btn-wrap">
-        <button id="playBtn" title="Play">🎾</button>
+        <button id="playBtn" title="Play">P</button>
         <div class="label">Play</div>
       </div>
       <div class="btn-wrap">
-        <button id="sleepBtn" title="Sleep / Wake">💤</button>
+        <button id="sleepBtn" title="Sleep / Wake">Z</button>
         <div class="label">Sleep</div>
       </div>
       <div class="btn-wrap">
-        <button id="cleanBtn" title="Clean">🧹</button>
+        <button id="cleanBtn" title="Clean">C</button>
         <div class="label">Clean</div>
       </div>
     </div>
@@ -389,16 +411,12 @@
     const HATCH_SECONDS = 4;
 
     const speciesOptions = [
-      { name: "Pip", emoji: "🐣" },
-      { name: "Momo", emoji: "🐶" },
-      { name: "Nori", emoji: "🐱" },
-      { name: "Bun", emoji: "🐰" },
-      { name: "Kiko", emoji: "🐸" },
-      { name: "Dori", emoji: "🐼" },
-      { name: "Luna", emoji: "🦊" },
-      { name: "Pico", emoji: "🐵" },
-      { name: "Mimi", emoji: "🐤" },
-      { name: "Fifi", emoji: "🦄" }
+      { name: "Pip", primary: "#7ec6a8", secondary: "#d9f5e9", accent: "#2d7a5d", ears: "short", tail: "round" },
+      { name: "Momo", primary: "#b79ef7", secondary: "#efe7ff", accent: "#785dcb", ears: "pointed", tail: "curl" },
+      { name: "Nori", primary: "#84d37d", secondary: "#e0ffd8", accent: "#2f7d4f", ears: "round", tail: "fan" },
+      { name: "Bun", primary: "#f1c4c2", secondary: "#fff1ef", accent: "#d97973", ears: "long", tail: "poof" },
+      { name: "Kiko", primary: "#f2b169", secondary: "#ffe9c8", accent: "#c66d33", ears: "short", tail: "round" },
+      { name: "Dori", primary: "#96c8f7", secondary: "#e7f3ff", accent: "#4b7ec8", ears: "pointed", tail: "fan" }
     ];
 
     const el = {
@@ -428,8 +446,9 @@
         asleep: false,
         alive: true,
         lastSeen: Date.now(),
-        species: species.emoji,
+        speciesInfo: species,
         speciesName: species.name,
+        speciesColor: species.primary,
         egg: true,
         hatched: false,
         hatchTimer: 0,
@@ -561,20 +580,96 @@
       bounce();
     }
 
-    function getPetDisplay() {
-      if (state.egg && !state.hatched) return "🥚";
-      if (!state.alive) return "💀";
-      return state.species || "🐣";
+    function getEarMarkup(species) {
+      const ears = species.ears;
+      if (ears === "long") {
+        return `
+          <path d="M62 36 L45 8 L58 27 L62 36 Z" fill="${species.primary}" />
+          <path d="M88 36 L105 8 L92 27 L88 36 Z" fill="${species.primary}" />
+        `;
+      }
+      if (ears === "pointed") {
+        return `
+          <path d="M62 36 L52 10 L70 28 L62 36 Z" fill="${species.primary}" />
+          <path d="M88 36 L98 10 L80 28 L88 36 Z" fill="${species.primary}" />
+        `;
+      }
+      return `
+        <ellipse cx="60" cy="26" rx="12" ry="18" fill="${species.primary}" />
+        <ellipse cx="90" cy="26" rx="12" ry="18" fill="${species.primary}" />
+      `;
+    }
+
+    function getTailMarkup(species) {
+      const tail = species.tail;
+      if (tail === "curl") {
+        return `<path d="M112 74 C130 70, 136 84, 126 96" fill="none" stroke="${species.primary}" stroke-width="8" stroke-linecap="round"/>`;
+      }
+      if (tail === "fan") {
+        return `<path d="M111 76 C130 70, 136 82, 126 94 C120 88, 115 82, 111 76 Z" fill="${species.primary}" />`;
+      }
+      if (tail === "poof") {
+        return `<circle cx="118" cy="76" r="10" fill="${species.primary}" />`;
+      }
+      return `<circle cx="116" cy="80" r="8" fill="${species.primary}" />`;
+    }
+
+    function getPetSvg() {
+      if (state.egg && !state.hatched) {
+        const crack = state.hatchTimer > HATCH_SECONDS * 0.7;
+        return `
+          <svg class="pet-svg" viewBox="0 0 170 140" aria-label="Egg" role="img">
+            <g>
+              <ellipse cx="85" cy="78" rx="46" ry="52" fill="#f5f9f5" stroke="#c6d7ce" stroke-width="4"/>
+              <ellipse cx="85" cy="78" rx="36" ry="42" fill="#edf4ee"/>
+              ${crack ? '<path d="M96 55 L109 67 L94 80" fill="none" stroke="#9a825f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />' : ''}
+              <path d="M72 60 C80 48, 92 48, 100 60" fill="none" stroke="#dfe7df" stroke-width="3" stroke-linecap="round"/>
+            </g>
+          </svg>
+        `;
+      }
+
+      const species = state.speciesInfo || speciesOptions[0];
+      const asleep = state.asleep && state.hatched;
+      const openMouth = state.happy < 35;
+      const eyesClosed = asleep || state.hunger < 20 || state.energy < 20;
+      const eyeY = eyesClosed ? 68 : 62;
+      const pupilY = eyesClosed ? 68 : 62;
+      const mouthY = openMouth ? 84 : 90;
+      const mouthH = openMouth ? 8 : 3;
+
+      return `
+        <svg class="pet-svg" viewBox="0 0 170 140" aria-label="${state.speciesName}" role="img">
+          <g>
+            <ellipse cx="84" cy="104" rx="54" ry="12" fill="rgba(0,0,0,0.10)"/>
+            ${getTailMarkup(species)}
+            ${getEarMarkup(species)}
+            <ellipse cx="85" cy="82" rx="38" ry="32" fill="${species.primary}"/>
+            <ellipse cx="85" cy="82" rx="31" ry="25" fill="${species.secondary}" opacity="0.8"/>
+            <path d="M58 95 Q85 108 112 95" fill="none" stroke="${species.accent}" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/>
+            <circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>
+            ${eyesClosed ? '' : `<circle cx="70" cy="${pupilY}" r="2" fill="#FFFFFF"/>`}
+            ${eyesClosed ? '' : `<circle cx="100" cy="${pupilY}" r="2" fill="#FFFFFF"/>`}
+            <ellipse cx="85" cy="${mouthY}" rx="12" ry="${mouthH}" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="85" cy="91" rx="9" ry="7" fill="${species.accent}" opacity="0.35"/>
+            <circle cx="64" cy="78" r="3" fill="${species.accent}" opacity="0.32"/>
+            <circle cx="106" cy="78" r="3" fill="${species.accent}" opacity="0.32"/>
+            ${state.happy < 30 ? '<path d="M61 103 Q85 108 109 103" fill="none" stroke="#2d7a5d" stroke-width="3" stroke-linecap="round"/>' : ''}
+          </g>
+        </svg>
+      `;
     }
 
     function render() {
-      el.pet.textContent = getPetDisplay();
+      el.pet.innerHTML = getPetSvg();
+      el.pet.classList.toggle("bounce", false);
       el.screen.classList.toggle("sleeping", state.asleep && state.hatched);
       el.screen.classList.toggle("egg", state.egg && !state.hatched);
       el.screen.classList.toggle("hatching", state.egg && !state.hatched && state.hatchTimer > HATCH_SECONDS * 0.75);
       el.name.textContent = state.egg && !state.hatched ? "Egg" : (state.speciesName || "Tama");
       el.age.textContent = "Age: " + Math.floor(state.age);
-      el.poop.textContent = "💩".repeat(state.poop);
+      el.poop.innerHTML = Array.from({ length: Math.max(0, state.poop) }, () => '<span class="poop-dot"></span>').join("");
 
       document.querySelector('[data-bar="hunger"]').style.width = state.hunger + "%";
       document.querySelector('[data-bar="happy"]').style.width = state.happy + "%";

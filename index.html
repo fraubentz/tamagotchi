@@ -27,7 +27,6 @@
       --screen-panel: rgba(25, 46, 36, 0.06);
       --device-shadow: rgba(0, 0, 0, 0.32);
       --pet-shadow: rgba(22, 40, 31, 0.15);
-      --panel-dark: rgba(26, 45, 34, 0.12);
     }
 
     * { box-sizing: border-box; }
@@ -310,13 +309,44 @@
 
     .action.clean .dust {
       position: absolute;
-      right: 30px;
-      bottom: 20px;
       width: 12px;
       height: 12px;
       border-radius: 50%;
       background: rgba(128, 96, 77, 0.55);
       animation: dustScatter 0.8s ease-out forwards;
+    }
+
+    .action.bath .splash {
+      position: absolute;
+      left: 50%;
+      top: 56%;
+      width: 80px;
+      height: 40px;
+      transform: translate(-50%, -50%) scale(0.7);
+      border-radius: 50%;
+      border: 5px solid rgba(97, 170, 255, 0.75);
+      background: rgba(130, 210, 255, 0.28);
+      animation: splashBurst 0.9s ease-out forwards;
+    }
+
+    .action.bath .drop {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(116, 191, 255, 0.8);
+      animation: dropFall 0.9s ease-in-out forwards;
+    }
+
+    .action.train .star {
+      position: absolute;
+      left: 26%;
+      top: 46%;
+      font-size: 28px;
+      transform: scale(0.4) rotate(-12deg);
+      animation: starJump 0.9s ease-in-out forwards;
     }
 
     @keyframes foodDrop {
@@ -375,6 +405,42 @@
       }
     }
 
+    @keyframes splashBurst {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      20% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+      }
+    }
+
+    @keyframes dropFall {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -10px) scale(0.5);
+      }
+      20% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 58px) scale(1.2);
+      }
+    }
+
+    @keyframes starJump {
+      0% {
+        opacity: 0;
+        transform: translate(-12px, 10px) scale(0.4) rotate(-12deg);
+      }
+      20%, 75% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(90px, -40px) scale(1.2) rotate(18deg);
+      }
+    }
+
     #message {
       position: relative;
       z-index: 1;
@@ -389,7 +455,7 @@
 
     .buttons {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 12px 8px;
       margin-top: 18px;
       position: relative;
@@ -451,6 +517,7 @@
 
     @media (max-width: 420px) {
       .device { width: min(90vw, 390px); }
+      .buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -497,6 +564,14 @@
       <div class="btn-wrap">
         <button id="cleanBtn" title="Clean">C</button>
         <div class="label">Clean</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="bathBtn" title="Bath">B</button>
+        <div class="label">Bath</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="trainBtn" title="Train">T</button>
+        <div class="label">Train</div>
       </div>
     </div>
 
@@ -591,12 +666,16 @@
         action.innerHTML = '<div class="ball"></div>';
       } else if (type === "clean") {
         action.innerHTML = '<div class="broom">🧹</div><div class="dust" style="left: 70%; top: 60%;"></div><div class="dust" style="left: 62%; top: 52%;"></div>';
+      } else if (type === "bath") {
+        action.innerHTML = '<div class="splash"></div><div class="drop"></div>';
+      } else if (type === "train") {
+        action.innerHTML = '<div class="star">⭐</div>';
       }
 
       el.actionLayer.innerHTML = "";
       el.actionLayer.appendChild(action);
       setTimeout(() => {
-        action.remove();
+        if (action.parentNode) action.remove();
       }, 900);
     }
 
@@ -699,6 +778,28 @@
       state.happy = clamp(state.happy + 5);
       say("All clean!");
       triggerAction("clean");
+      bounce();
+    }
+
+    function bath() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      state.happy = clamp(state.happy + 12);
+      state.energy = clamp(state.energy + 6);
+      say("Fresh and clean!");
+      triggerAction("bath");
+      bounce();
+    }
+
+    function train() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (state.energy < 20) return say("I'm too tired to train.");
+      state.happy = clamp(state.happy + 18);
+      state.energy = clamp(state.energy - 12);
+      state.hunger = clamp(state.hunger - 8);
+      say("I learned something new!");
+      triggerAction("train");
       bounce();
     }
 
@@ -831,6 +932,8 @@
     document.getElementById("playBtn").addEventListener("click", play);
     document.getElementById("sleepBtn").addEventListener("click", toggleSleep);
     document.getElementById("cleanBtn").addEventListener("click", clean);
+    document.getElementById("bathBtn").addEventListener("click", bath);
+    document.getElementById("trainBtn").addEventListener("click", train);
     document.getElementById("resetBtn").addEventListener("click", () => {
       state = newPet();
       say("A new egg is warming up...");

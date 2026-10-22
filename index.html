@@ -259,6 +259,122 @@
       opacity: 0.8;
     }
 
+    .action-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .action {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .action.feed .food {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      font-size: 34px;
+      transform: translate(-50%, -50%) scale(0.7) rotate(-12deg);
+      animation: foodDrop 0.8s ease-out forwards;
+    }
+
+    .action.play .ball {
+      position: absolute;
+      left: 18%;
+      top: 52%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffffff, #c9e2ff 28%, #90b7df 62%, #5b8cc7 100%);
+      border: 3px solid rgba(41, 71, 103, 0.7);
+      box-shadow: 0 2px 0 rgba(41,71,103,0.5);
+      animation: ballToss 0.9s ease-in-out forwards;
+    }
+
+    .action.clean .broom {
+      position: absolute;
+      left: -18%;
+      top: 52%;
+      font-size: 34px;
+      transform: rotate(18deg) scale(0.8);
+      animation: broomSweep 0.9s ease-in-out forwards;
+    }
+
+    .action.clean .dust {
+      position: absolute;
+      right: 30px;
+      bottom: 20px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(128, 96, 77, 0.55);
+      animation: dustScatter 0.8s ease-out forwards;
+    }
+
+    @keyframes foodDrop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -70%) scale(0.7) rotate(-12deg);
+      }
+      18% { opacity: 1; }
+      56% {
+        opacity: 1;
+        transform: translate(-50%, 28px) scale(1.08) rotate(6deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 68px) scale(0.9) rotate(12deg);
+      }
+    }
+
+    @keyframes ballToss {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+      }
+      18%, 60% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(130px, -52px) scale(1.2);
+      }
+    }
+
+    @keyframes broomSweep {
+      0% {
+        opacity: 0;
+        transform: translate(-10px, 8px) rotate(18deg) scale(0.7);
+      }
+      20%, 75% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(180px, -10px) rotate(-10deg) scale(0.9);
+      }
+    }
+
+    @keyframes dustScatter {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.8);
+      }
+      20% { opacity: 1; }
+      100% {
+        opacity: 0;
+        transform: translate(-42px, -18px) scale(1.3);
+      }
+    }
+
     #message {
       position: relative;
       z-index: 1;
@@ -356,9 +472,10 @@
         <div>Energy <span class="bar"><span data-bar="energy"></span></span></div>
       </div>
 
-      <div class="pet-area">
+      <div class="pet-area" id="petArea">
         <div id="pet"></div>
         <div id="poop"></div>
+        <div class="action-layer" id="actionLayer"></div>
       </div>
 
       <div id="message"></div>
@@ -404,10 +521,12 @@
     const el = {
       screen: document.getElementById("screen"),
       pet: document.getElementById("pet"),
+      petArea: document.getElementById("petArea"),
       poop: document.getElementById("poop"),
       age: document.getElementById("age"),
       name: document.getElementById("name"),
       message: document.getElementById("message"),
+      actionLayer: document.getElementById("actionLayer"),
     };
 
     let state = load() || newPet();
@@ -460,6 +579,25 @@
       el.pet.classList.remove("bounce");
       void el.pet.offsetWidth;
       el.pet.classList.add("bounce");
+    }
+
+    function triggerAction(type) {
+      const action = document.createElement("div");
+      action.className = "action " + type;
+
+      if (type === "feed") {
+        action.innerHTML = '<div class="food">🍙</div>';
+      } else if (type === "play") {
+        action.innerHTML = '<div class="ball"></div>';
+      } else if (type === "clean") {
+        action.innerHTML = '<div class="broom">🧹</div><div class="dust" style="left: 70%; top: 60%;"></div><div class="dust" style="left: 62%; top: 52%;"></div>';
+      }
+
+      el.actionLayer.innerHTML = "";
+      el.actionLayer.appendChild(action);
+      setTimeout(() => {
+        action.remove();
+      }, 900);
     }
 
     function hatchPet() {
@@ -526,6 +664,7 @@
       state.hunger = clamp(state.hunger + 25);
       state.happy = clamp(state.happy + 3);
       say("Yum! Thank you!");
+      triggerAction("feed");
       bounce();
     }
 
@@ -537,6 +676,7 @@
       state.energy = clamp(state.energy - 10);
       state.hunger = clamp(state.hunger - 5);
       say("Wheee! That was fun!");
+      triggerAction("play");
       bounce();
     }
 
@@ -558,6 +698,7 @@
       state.poop--;
       state.happy = clamp(state.happy + 5);
       say("All clean!");
+      triggerAction("clean");
       bounce();
     }
 

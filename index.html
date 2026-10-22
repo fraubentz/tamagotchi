@@ -18,16 +18,13 @@
       --shell-border: #4d3d1d;
       --screen-bg: #bfe4bb;
       --screen-border: #1d3b2d;
-      --screen-inner: #7ba67f;
       --screen-text: #1c2c22;
       --button-top: #f4d7a4;
       --button-mid: #d59e58;
       --button-shadow: #7e5922;
       --button-border: #3b2b16;
-      --panel: rgba(34, 52, 37, 0.09);
-      --lcd-green: #2f8a4a;
-      --lcd-green-deep: #184a2f;
       --white: #f9f5e8;
+      --screen-panel: rgba(19, 41, 28, 0.05);
       --device-shadow: rgba(0, 0, 0, 0.32);
     }
 
@@ -179,7 +176,7 @@
       display: block;
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, var(--lcd-green), var(--lcd-green-deep));
+      background: linear-gradient(90deg, #2f8a4a, #184a2f);
       transition: width 0.35s ease;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
     }
@@ -194,7 +191,7 @@
       min-height: 160px;
       margin-top: 8px;
       border-radius: 10px;
-      background: rgba(19, 41, 28, 0.05);
+      background: var(--screen-panel);
       overflow: hidden;
     }
 
@@ -213,12 +210,30 @@
       user-select: none;
       filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
       transform-origin: center bottom;
-      transition: filter 0.2s ease;
+      transition: filter 0.2s ease, transform 0.2s ease;
       z-index: 1;
+    }
+
+    .egg #pet {
+      animation: eggFloat 1.4s ease-in-out infinite;
+    }
+
+    .hatching #pet {
+      animation: hatchPulse 0.8s ease-in-out infinite alternate;
     }
 
     .bounce {
       animation: bounce 0.45s steps(2, end);
+    }
+
+    @keyframes eggFloat {
+      0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
+      50% { transform: translateY(-10px) rotate(2deg) scale(1.04); }
+    }
+
+    @keyframes hatchPulse {
+      0% { transform: scale(1) rotate(-3deg); }
+      100% { transform: scale(1.08) rotate(3deg); }
     }
 
     @keyframes bounce {
@@ -370,7 +385,21 @@
   <script>
     const SAVE_KEY = "tamagotchi-save-v1";
     const MAX_CATCHUP_SECONDS = 3600;
-    const AGE_SECONDS_PER_STAGE = 240; // 1 age step every 4 minutes
+    const AGE_SECONDS_PER_STAGE = 240;
+    const HATCH_SECONDS = 4;
+
+    const speciesOptions = [
+      { name: "Pip", emoji: "🐣" },
+      { name: "Momo", emoji: "🐶" },
+      { name: "Nori", emoji: "🐱" },
+      { name: "Bun", emoji: "🐰" },
+      { name: "Kiko", emoji: "🐸" },
+      { name: "Dori", emoji: "🐼" },
+      { name: "Luna", emoji: "🦊" },
+      { name: "Pico", emoji: "🐵" },
+      { name: "Mimi", emoji: "🐤" },
+      { name: "Fifi", emoji: "🦄" }
+    ];
 
     const el = {
       screen: document.getElementById("screen"),
@@ -383,7 +412,12 @@
 
     let state = load() || newPet();
 
+    function randomSpecies() {
+      return speciesOptions[Math.floor(Math.random() * speciesOptions.length)];
+    }
+
     function newPet() {
+      const species = randomSpecies();
       return {
         hunger: 80,
         happy: 80,
@@ -394,6 +428,11 @@
         asleep: false,
         alive: true,
         lastSeen: Date.now(),
+        species: species.emoji,
+        speciesName: species.name,
+        egg: true,
+        hatched: false,
+        hatchTimer: 0,
       };
     }
 
@@ -401,8 +440,49 @@
       return Math.max(0, Math.min(100, v));
     }
 
+    function say(text) {
+      el.message.textContent = text;
+    }
+
+    function requireAlive() {
+      if (!state.alive) {
+        say("Tama is gone. Press New pet.");
+        return false;
+      }
+      if (state.egg && !state.hatched) {
+        say("The egg is hatching...");
+        return false;
+      }
+      return true;
+    }
+
+    function bounce() {
+      el.pet.classList.remove("bounce");
+      void el.pet.offsetWidth;
+      el.pet.classList.add("bounce");
+    }
+
+    function hatchPet() {
+      state.egg = false;
+      state.hatched = true;
+      state.hatchTimer = 0;
+      say("Peep! Hello, I'm " + state.speciesName + "!");
+      bounce();
+    }
+
     function update(dt) {
       if (!state.alive) return;
+
+      if (state.egg && !state.hatched) {
+        state.hatchTimer += dt;
+        state.hunger = clamp(state.hunger - 0.02 * dt);
+        state.happy = clamp(state.happy - 0.01 * dt);
+
+        if (state.hatchTimer >= HATCH_SECONDS) {
+          hatchPet();
+        }
+        return;
+      }
 
       state.age += dt / AGE_SECONDS_PER_STAGE;
 
@@ -437,24 +517,6 @@
       } else {
         state.starving = 0;
       }
-    }
-
-    function say(text) {
-      el.message.textContent = text;
-    }
-
-    function requireAlive() {
-      if (!state.alive) {
-        say("Tama is gone. Press New pet.");
-        return false;
-      }
-      return true;
-    }
-
-    function bounce() {
-      el.pet.classList.remove("bounce");
-      void el.pet.offsetWidth;
-      el.pet.classList.add("bounce");
     }
 
     function feed() {
@@ -499,19 +561,18 @@
       bounce();
     }
 
-    function getMood() {
+    function getPetDisplay() {
+      if (state.egg && !state.hatched) return "🥚";
       if (!state.alive) return "💀";
-      if (state.asleep) return "😴";
-      if (state.hunger < 25 || state.happy < 25) return "😢";
-      if (state.energy < 20) return "🥱";
-      if (state.age < 2) return "🐣";
-      if (state.age < 5) return "🐥";
-      return "🐤";
+      return state.species || "🐣";
     }
 
     function render() {
-      el.pet.textContent = getMood();
-      el.screen.classList.toggle("sleeping", state.asleep);
+      el.pet.textContent = getPetDisplay();
+      el.screen.classList.toggle("sleeping", state.asleep && state.hatched);
+      el.screen.classList.toggle("egg", state.egg && !state.hatched);
+      el.screen.classList.toggle("hatching", state.egg && !state.hatched && state.hatchTimer > HATCH_SECONDS * 0.75);
+      el.name.textContent = state.egg && !state.hatched ? "Egg" : (state.speciesName || "Tama");
       el.age.textContent = "Age: " + Math.floor(state.age);
       el.poop.textContent = "💩".repeat(state.poop);
 
@@ -550,7 +611,7 @@
     document.getElementById("cleanBtn").addEventListener("click", clean);
     document.getElementById("resetBtn").addEventListener("click", () => {
       state = newPet();
-      say("Hello! I'm Tama!");
+      say("A new egg is warming up...");
       save();
       render();
     });
@@ -563,8 +624,10 @@
 
     if (!state.alive) {
       say("Tama is gone. Press New pet.");
+    } else if (state.egg && !state.hatched) {
+      say("A new egg is warming up...");
     } else {
-      say("Hello! I'm Tama!");
+      say("Peep! Hello, I'm " + (state.speciesName || "Tama") + "!");
     }
     render();
   </script>

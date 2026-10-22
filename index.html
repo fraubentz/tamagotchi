@@ -9,29 +9,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #1f2328;
-      --bg-mid: #3e4651;
-      --shell-top: #f4e7b6;
-      --shell-mid: #d9c98a;
-      --shell-bottom: #b2975b;
-      --shell-shadow: #7c6731;
-      --shell-border: #4d3d1d;
-      --screen-bg: #bfe4bb;
-      --screen-border: #1d3b2d;
-      --screen-text: #1c2c22;
-      --button-top: #f4d7a4;
-      --button-mid: #d59e58;
-      --button-shadow: #7e5922;
-      --button-border: #3b2b16;
-      --white: #f9f5e8;
-      --screen-panel: rgba(19, 41, 28, 0.05);
+      --bg-dark: #1c2329;
+      --bg-mid: #39444f;
+      --shell-top: #f3e7ae;
+      --shell-mid: #d7c387;
+      --shell-bottom: #b48f57;
+      --shell-shadow: #7a5d2e;
+      --shell-border: #4b3519;
+      --screen-bg: #cce6c5;
+      --screen-border: #204033;
+      --screen-text: #1f2d2a;
+      --button-top: #f5d5a1;
+      --button-mid: #d9a05d;
+      --button-shadow: #7e5522;
+      --button-border: #3a2a1a;
+      --white: #fefaf0;
+      --screen-panel: rgba(25, 46, 36, 0.06);
       --device-shadow: rgba(0, 0, 0, 0.32);
-      --pet-shadow: rgba(21, 42, 28, 0.15);
+      --pet-shadow: rgba(22, 40, 31, 0.15);
+      --panel-dark: rgba(26, 45, 34, 0.12);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -52,16 +51,16 @@
 
     .device {
       position: relative;
-      width: 380px;
+      width: 390px;
       padding: 26px 18px 22px;
-      background: linear-gradient(180deg, var(--shell-top) 0%, var(--shell-mid) 22%, var(--shell-bottom) 100%);
+      background: linear-gradient(180deg, var(--shell-top) 0%, var(--shell-mid) 25%, var(--shell-bottom) 100%);
       border: 5px solid var(--shell-border);
       border-radius: 38px 38px 30px 30px;
       box-shadow:
         inset -10px -10px 0 rgba(92, 69, 24, 0.18),
-        inset 8px 8px 0 rgba(255, 255, 255, 0.18),
+        inset 8px 8px 0 rgba(255,255,255,0.18),
         0 18px 26px var(--device-shadow),
-        0 0 0 8px rgba(255,255,255,0.05);
+        0 0 0 8px rgba(255,255,255,0.04);
     }
 
     .device::before,
@@ -76,13 +75,8 @@
       z-index: 0;
     }
 
-    .device::before {
-      left: 22px;
-    }
-
-    .device::after {
-      right: 22px;
-    }
+    .device::before { left: 22px; }
+    .device::after { right: 22px; }
 
     .speaker {
       position: absolute;
@@ -90,9 +84,7 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
+      gap: 7px;
       z-index: 1;
     }
 
@@ -100,9 +92,9 @@
       display: block;
       width: 6px;
       height: 6px;
-      background: rgba(58, 48, 27, 0.7);
       border-radius: 50%;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+      background: rgba(55, 42, 24, 0.7);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
     }
 
     .screen {
@@ -112,9 +104,9 @@
       flex-direction: column;
       min-height: 340px;
       padding: 16px 12px 12px;
-      background: linear-gradient(180deg, #d8f0d3 0%, var(--screen-bg) 100%);
       border: 6px solid var(--screen-border);
       border-radius: 18px;
+      background: linear-gradient(180deg, #daf1d8 0%, var(--screen-bg) 100%);
       box-shadow:
         inset 0 0 0 4px rgba(17, 38, 28, 0.15),
         inset 0 0 0 10px rgba(125, 157, 116, 0.2);
@@ -209,8 +201,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 170px;
-      height: 140px;
+      width: 180px;
+      height: 144px;
       user-select: none;
       transform-origin: center bottom;
       transition: filter 0.2s ease, transform 0.2s ease;
@@ -219,22 +211,14 @@
 
     .pet-svg {
       display: block;
-      width: 170px;
-      height: 140px;
+      width: 180px;
+      height: 144px;
       filter: drop-shadow(3px 3px 0 var(--pet-shadow));
     }
 
-    .egg #pet {
-      animation: eggFloat 1.4s ease-in-out infinite;
-    }
-
-    .hatching #pet {
-      animation: hatchPulse 0.8s ease-in-out infinite alternate;
-    }
-
-    .bounce {
-      animation: bounce 0.45s steps(2, end);
-    }
+    .egg #pet { animation: eggFloat 1.5s ease-in-out infinite; }
+    .hatching #pet { animation: hatchPulse 0.75s ease-in-out infinite alternate; }
+    .bounce { animation: bounce 0.42s steps(2, end); }
 
     @keyframes eggFloat {
       0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
@@ -252,13 +236,13 @@
     }
 
     .sleeping .pet-svg {
-      filter: grayscale(0.4) brightness(0.85) drop-shadow(3px 3px 0 var(--pet-shadow));
+      filter: grayscale(0.35) brightness(0.8) drop-shadow(3px 3px 0 var(--pet-shadow));
     }
 
     #poop {
       position: absolute;
-      right: 18px;
-      bottom: 14px;
+      right: 14px;
+      bottom: 12px;
       display: flex;
       align-items: flex-end;
       gap: 3px;
@@ -271,17 +255,17 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #6a4b39;
+      background: #6d4c3a;
       opacity: 0.8;
     }
 
     #message {
       position: relative;
       z-index: 1;
-      min-height: 50px;
+      min-height: 52px;
       padding-top: 10px;
       font-size: 9px;
-      line-height: 1.5;
+      line-height: 1.45;
       text-align: center;
       text-transform: uppercase;
       color: var(--screen-text);
@@ -350,9 +334,7 @@
     }
 
     @media (max-width: 420px) {
-      .device {
-        width: min(90vw, 380px);
-      }
+      .device { width: min(90vw, 390px); }
     }
   </style>
 </head>
@@ -411,7 +393,7 @@
     const HATCH_SECONDS = 4;
 
     const speciesOptions = [
-      { name: "Pip", primary: "#7ec6a8", secondary: "#d9f5e9", accent: "#2d7a5d", ears: "short", tail: "round" },
+      { name: "Pip", primary: "#7ec6a8", secondary: "#dff9ee", accent: "#2d7a5d", ears: "short", tail: "round" },
       { name: "Momo", primary: "#b79ef7", secondary: "#efe7ff", accent: "#785dcb", ears: "pointed", tail: "curl" },
       { name: "Nori", primary: "#84d37d", secondary: "#e0ffd8", accent: "#2f7d4f", ears: "round", tail: "fan" },
       { name: "Bun", primary: "#f1c4c2", secondary: "#fff1ef", accent: "#d97973", ears: "long", tail: "poof" },
@@ -448,7 +430,6 @@
         lastSeen: Date.now(),
         speciesInfo: species,
         speciesName: species.name,
-        speciesColor: species.primary,
         egg: true,
         hatched: false,
         hatchTimer: 0,
@@ -581,17 +562,16 @@
     }
 
     function getEarMarkup(species) {
-      const ears = species.ears;
-      if (ears === "long") {
+      if (species.ears === "long") {
         return `
-          <path d="M62 36 L45 8 L58 27 L62 36 Z" fill="${species.primary}" />
-          <path d="M88 36 L105 8 L92 27 L88 36 Z" fill="${species.primary}" />
+          <path d="M62 36 L42 5 L58 28 L62 36 Z" fill="${species.primary}" />
+          <path d="M88 36 L108 5 L92 28 L88 36 Z" fill="${species.primary}" />
         `;
       }
-      if (ears === "pointed") {
+      if (species.ears === "pointed") {
         return `
-          <path d="M62 36 L52 10 L70 28 L62 36 Z" fill="${species.primary}" />
-          <path d="M88 36 L98 10 L80 28 L88 36 Z" fill="${species.primary}" />
+          <path d="M62 36 L53 12 L69 27 L62 36 Z" fill="${species.primary}" />
+          <path d="M88 36 L97 12 L81 27 L88 36 Z" fill="${species.primary}" />
         `;
       }
       return `
@@ -601,17 +581,25 @@
     }
 
     function getTailMarkup(species) {
-      const tail = species.tail;
-      if (tail === "curl") {
-        return `<path d="M112 74 C130 70, 136 84, 126 96" fill="none" stroke="${species.primary}" stroke-width="8" stroke-linecap="round"/>`;
+      if (species.tail === "curl") {
+        return `<path d="M112 76 C126 70, 136 84, 128 96" fill="none" stroke="${species.primary}" stroke-width="8" stroke-linecap="round"/>`;
       }
-      if (tail === "fan") {
-        return `<path d="M111 76 C130 70, 136 82, 126 94 C120 88, 115 82, 111 76 Z" fill="${species.primary}" />`;
+      if (species.tail === "fan") {
+        return `<path d="M112 76 C129 72, 138 82, 128 93 C120 88, 115 82, 112 76 Z" fill="${species.primary}" />`;
       }
-      if (tail === "poof") {
+      if (species.tail === "poof") {
         return `<circle cx="118" cy="76" r="10" fill="${species.primary}" />`;
       }
       return `<circle cx="116" cy="80" r="8" fill="${species.primary}" />`;
+    }
+
+    function getMoodState() {
+      if (state.egg && !state.hatched) return "egg";
+      if (!state.alive) return "dead";
+      if (state.asleep) return "sleepy";
+      if (state.hunger < 25 || state.happy < 25) return "sad";
+      if (state.energy < 20) return "tired";
+      return "happy";
     }
 
     function getPetSvg() {
@@ -620,23 +608,23 @@
         return `
           <svg class="pet-svg" viewBox="0 0 170 140" aria-label="Egg" role="img">
             <g>
-              <ellipse cx="85" cy="78" rx="46" ry="52" fill="#f5f9f5" stroke="#c6d7ce" stroke-width="4"/>
-              <ellipse cx="85" cy="78" rx="36" ry="42" fill="#edf4ee"/>
-              ${crack ? '<path d="M96 55 L109 67 L94 80" fill="none" stroke="#9a825f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />' : ''}
-              <path d="M72 60 C80 48, 92 48, 100 60" fill="none" stroke="#dfe7df" stroke-width="3" stroke-linecap="round"/>
+              <ellipse cx="85" cy="78" rx="46" ry="52" fill="#f4f8f5" stroke="#d0d9d0" stroke-width="4"/>
+              <ellipse cx="85" cy="78" rx="36" ry="42" fill="#edf5ef"/>
+              <path d="M74 61 C84 50, 95 50, 106 62" fill="none" stroke="#dfe8df" stroke-width="3" stroke-linecap="round"/>
+              ${crack ? '<path d="M94 58 L108 70 L95 82" fill="none" stroke="#a88054" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />' : ''}
             </g>
           </svg>
         `;
       }
 
       const species = state.speciesInfo || speciesOptions[0];
-      const asleep = state.asleep && state.hatched;
-      const openMouth = state.happy < 35;
-      const eyesClosed = asleep || state.hunger < 20 || state.energy < 20;
-      const eyeY = eyesClosed ? 68 : 62;
-      const pupilY = eyesClosed ? 68 : 62;
-      const mouthY = openMouth ? 84 : 90;
-      const mouthH = openMouth ? 8 : 3;
+      const mood = getMoodState();
+      const asleep = mood === "sleepy";
+      const sad = mood === "sad";
+      const tired = mood === "tired";
+      const mouthOpen = sad || tired || state.hunger < 20;
+      const eyeY = asleep ? 69 : 64;
+      const eyelids = asleep ? "<path d='M64 68 Q70 64 76 68' fill='none' stroke='#1d2b22' stroke-width='3' stroke-linecap='round' /><path d='M94 68 Q100 64 106 68' fill='none' stroke='#1d2b22' stroke-width='3' stroke-linecap='round' />" : "";
 
       return `
         <svg class="pet-svg" viewBox="0 0 170 140" aria-label="${state.speciesName}" role="img">
@@ -646,16 +634,15 @@
             ${getEarMarkup(species)}
             <ellipse cx="85" cy="82" rx="38" ry="32" fill="${species.primary}"/>
             <ellipse cx="85" cy="82" rx="31" ry="25" fill="${species.secondary}" opacity="0.8"/>
-            <path d="M58 95 Q85 108 112 95" fill="none" stroke="${species.accent}" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/>
-            <circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>
-            ${eyesClosed ? '' : `<circle cx="70" cy="${pupilY}" r="2" fill="#FFFFFF"/>`}
-            ${eyesClosed ? '' : `<circle cx="100" cy="${pupilY}" r="2" fill="#FFFFFF"/>`}
-            <ellipse cx="85" cy="${mouthY}" rx="12" ry="${mouthH}" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>
-            <ellipse cx="85" cy="91" rx="9" ry="7" fill="${species.accent}" opacity="0.35"/>
-            <circle cx="64" cy="78" r="3" fill="${species.accent}" opacity="0.32"/>
-            <circle cx="106" cy="78" r="3" fill="${species.accent}" opacity="0.32"/>
-            ${state.happy < 30 ? '<path d="M61 103 Q85 108 109 103" fill="none" stroke="#2d7a5d" stroke-width="3" stroke-linecap="round"/>' : ''}
+            <path d="M58 95 Q85 106 112 95" fill="none" stroke="${species.accent}" stroke-width="4" stroke-linecap="round"/>
+            ${eyelids}
+            ${asleep ? "" : `<circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/><circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>`}
+            ${!asleep ? `<circle cx="68" cy="${eyeY-2}" r="2" fill="#FFFFFF"/><circle cx="98" cy="${eyeY-2}" r="2" fill="#FFFFFF"/>` : ""}
+            <path d="M74 ${mouthOpen ? 88 : 92} Q85 ${mouthOpen ? 98 : 96} 96 ${mouthOpen ? 88 : 92}" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round"/>
+            ${sad ? '<path d="M61 102 Q85 109 109 102" fill="none" stroke="#1f2d2a" stroke-width="3" stroke-linecap="round"/>' : ''}
+            ${tired ? '<path d="M70 74 Q85 79 100 74" fill="none" stroke="rgba(29,43,34,0.6)" stroke-width="3" stroke-linecap="round"/>' : ''}
+            <circle cx="65" cy="80" r="3" fill="${species.accent}" opacity="0.28"/>
+            <circle cx="105" cy="80" r="3" fill="${species.accent}" opacity="0.28"/>
           </g>
         </svg>
       `;
@@ -663,7 +650,6 @@
 
     function render() {
       el.pet.innerHTML = getPetSvg();
-      el.pet.classList.toggle("bounce", false);
       el.screen.classList.toggle("sleeping", state.asleep && state.hatched);
       el.screen.classList.toggle("egg", state.egg && !state.hatched);
       el.screen.classList.toggle("hatching", state.egg && !state.hatched && state.hatchTimer > HATCH_SECONDS * 0.75);

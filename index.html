@@ -500,6 +500,7 @@
       z-index: 5;
       padding: 14px 14px 10px;
       background: rgba(218, 241, 216, 0.97);
+      color: #1f2d2a;
       font-size: 8px;
       line-height: 1.9;
       text-transform: uppercase;
@@ -766,6 +767,95 @@
       border-color: #fff;
     }
 
+    /* Idle life: blinking, wandering, waking */
+    .eyes {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: blink 5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 92%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.08); }
+    }
+
+    .wandering .pet-svg { animation: wander 16s ease-in-out infinite; }
+
+    @keyframes wander {
+      0%, 100% { transform: translateX(0); }
+      20%, 35% { transform: translateX(-28px); }
+      55%, 70% { transform: translateX(24px); }
+    }
+
+    .action.wake .sun {
+      position: absolute;
+      left: 18%;
+      top: 16%;
+      font-size: 28px;
+      animation: sunRise 1.3s ease-out forwards;
+    }
+
+    @keyframes sunRise {
+      0% { opacity: 0; transform: translateY(16px) scale(0.6); }
+      30%, 70% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-8px) scale(1.15); }
+    }
+
+    /* Night mode (local time, 22:00-07:00) */
+    .screen.night {
+      --screen-text: #d5ecd2;
+      background: linear-gradient(180deg, #2a4638 0%, #1b2f26 100%);
+    }
+
+    .screen.night .bar { border-color: rgba(213, 236, 210, 0.75); background: rgba(213, 236, 210, 0.1); }
+    .screen.night .bar span { background: linear-gradient(90deg, #8fd694, #4fa66a); }
+    .screen.night .pet-area::before { border-color: rgba(213, 236, 210, 0.18); }
+
+    /* Guess game and backup overlays */
+    .game, .backup { cursor: default; }
+    .game .game-note { margin: 10px 0 6px; min-height: 30px; text-align: center; line-height: 1.6; }
+    .game .game-score { margin-bottom: 10px; text-align: center; opacity: 0.75; }
+    .game-btns { display: flex; justify-content: center; gap: 10px; margin-top: 6px; }
+
+    .game-btn {
+      width: auto;
+      height: auto;
+      min-width: 104px;
+      padding: 14px 12px;
+      border-width: 3px;
+      border-radius: 12px;
+      font-size: 9px;
+    }
+
+    .backup textarea {
+      width: 100%;
+      height: 92px;
+      padding: 6px;
+      border: 2px solid rgba(29, 55, 39, 0.6);
+      border-radius: 6px;
+      background: #f4fbf2;
+      color: #1f2d2a;
+      font: 8px/1.4 "Courier New", monospace;
+      text-transform: none;
+      resize: none;
+    }
+
+    .backup-btns { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+    .backup .hint { text-transform: none; line-height: 1.5; }
+
+    .mini {
+      width: auto;
+      height: auto;
+      padding: 8px 10px;
+      border-width: 2px;
+      border-radius: 10px;
+      font-size: 8px;
+      box-shadow: 0 3px 0 var(--button-shadow);
+    }
+
+    .footer-btns { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+    .footer-btns .reset { margin: 0; }
+
     .top .mute {
       width: 30px;
       height: 24px;
@@ -822,6 +912,19 @@
       <div id="message" aria-live="polite" aria-atomic="true"></div>
 
       <div class="status" id="status" role="dialog" aria-label="Health status" hidden></div>
+
+      <div class="status game" id="game" role="dialog" aria-label="Guess game" hidden></div>
+
+      <div class="status backup" id="backup" role="dialog" aria-label="Save backup" hidden>
+        <h2>Backup</h2>
+        <textarea id="backupText" spellcheck="false" aria-label="Save data"></textarea>
+        <div class="backup-btns">
+          <button type="button" class="mini" id="backupCopy">Copy</button>
+          <button type="button" class="mini" id="backupLoad">Load</button>
+          <button type="button" class="mini" id="backupClose">Close</button>
+        </div>
+        <div class="hint" id="backupNote">Copy this code to keep your pet safe, or paste a saved code and press Load.</div>
+      </div>
     </div>
 
     <div class="buttons" aria-label="Actions">
@@ -867,7 +970,10 @@
       </div>
     </div>
 
-    <button class="reset" id="resetBtn" type="button" aria-label="Start a new pet">New pet</button>
+    <div class="footer-btns">
+      <button class="reset" id="resetBtn" type="button" aria-label="Start a new pet">New pet</button>
+      <button class="reset" id="backupBtn" type="button" aria-label="Back up or restore your pet">Backup</button>
+    </div>
   </div>
 
   <script>
@@ -890,12 +996,13 @@
     const CARE_HORIZON_SECONDS = 1800; // how slowly care quality moves
 
     // Sickness: neglect raises the risk; untreated illness is fatal after this long
-    const SICK_DEATH_SECONDS = 1200;   // 20 minutes
-    const IMMUNITY_SECONDS = 180;      // protected from getting sick again after a cure
+    const STARVE_DEATH_SECONDS = 300;  // at zero hunger for this long = starved
+    const SICK_DEATH_SECONDS = 3600;   // 1 hour
+    const IMMUNITY_SECONDS = 600;      // protected from getting sick again after a cure
 
     // Attention: the pet calls when it needs something. An unanswered call becomes a
     // care mistake after this long, which lowers care quality (and so evolution form).
-    const CALL_PATIENCE_SECONDS = 180;
+    const CALL_PATIENCE_SECONDS = 600;
     const MISTAKE_CARE_PENALTY = 8;
     const CALL_TEXT = {
       sick: "I don't feel well!",
@@ -906,6 +1013,10 @@
     };
     const CALL_ICON = { sick: "💊", hungry: "🍙", dirty: "💩", bored: "🎾", tired: "💤" };
     const FORM_LABELS = { bright: "Radiant", plain: "Steady", scruffy: "Scruffy" };
+
+    // Long-term play: a natural end of life, and the guess mini-game
+    const LIFESPAN_AGE = 540;          // ~36 hours; seniors slow down before this
+    const GAME_ROUNDS = 5;
 
     const speciesOptions = [
       { name: "Pip", primary: "#7ec6a8", secondary: "#dff9ee", accent: "#2d7a5d", ears: "short", tail: "round" },
@@ -928,6 +1039,10 @@
       status: document.getElementById("status"),
       attn: document.getElementById("attn"),
       mute: document.getElementById("muteBtn"),
+      game: document.getElementById("game"),
+      backup: document.getElementById("backup"),
+      backupText: document.getElementById("backupText"),
+      backupNote: document.getElementById("backupNote"),
       resetBtn: document.getElementById("resetBtn"),
       bars: {
         hunger: document.querySelector('[data-bar="hunger"]'),
@@ -960,7 +1075,7 @@
         egg: true,
         hatched: false,
         hatchTimer: 0,
-        fartCooldown: 7 + Math.random() * 10,
+        fartCooldown: fartDelay(),
         stage: 0,
         form: "plain",
         forms: ["plain"],  // form chosen at each stage, kept as history
@@ -974,6 +1089,8 @@
         callMissed: false,
         answered: 0,
         mistakes: 0,
+        generation: 1,     // which pet in the family line this is
+        natural: false,    // true if it passed away of old age
       };
     }
 
@@ -1003,6 +1120,10 @@
     let state = load() || newPet();
     let carry = 0;           // leftover fractional seconds between ticks
     let lastTick = Date.now();
+
+    function fartDelay() {
+      return 120 + Math.random() * 240; // seconds until the next fart check
+    }
 
     function clamp(v) {
       return Math.max(0, Math.min(100, v));
@@ -1073,6 +1194,7 @@
           call: [880, 660],
           pet: [600, 820],
           snack: [520, 760],
+          wake: [300, 520],
           fart: [74, 54],
         };
         const f = frequencies[type];
@@ -1115,6 +1237,8 @@
         action.innerHTML = '<div class="splash"></div><div class="drop"></div><div class="bubble" style="left: 42%; top: 68%;"></div><div class="bubble" style="left: 52%; top: 70%;"></div><div class="bubble" style="left: 60%; top: 66%;"></div>';
       } else if (type === "train") {
         action.innerHTML = '<div class="star">⭐</div><div class="spark" style="left: 40%; top: 52%;"></div><div class="spark" style="left: 56%; top: 42%;"></div><div class="spark" style="left: 68%; top: 56%;"></div>';
+      } else if (type === "wake") {
+        action.innerHTML = '<div class="sun">☀️</div>';
       } else if (type === "snack") {
         action.innerHTML = '<div class="food">🍪</div>';
       } else if (type === "pet") {
@@ -1131,13 +1255,13 @@
       el.actionLayer.appendChild(action);
       setTimeout(() => {
         if (action.parentNode) action.remove();
-      }, type === "sleep" ? 2100 : type === "medicine" ? 1800 : type === "pet" ? 1400 : 1000);
+      }, type === "sleep" ? 2100 : type === "medicine" ? 1800 : type === "pet" ? 1400 : type === "wake" ? 1500 : 1000);
     }
 
     function triggerFart(silent) {
       if (state.asleep || !state.alive || (state.egg && !state.hatched)) return;
-      state.happy = clamp(state.happy - 2);
-      state.fartCooldown = 8 + Math.random() * 15;
+      state.happy = clamp(state.happy - 1);
+      state.fartCooldown = fartDelay();
       if (silent) return; // catching up after time away: no sound or animation
       say("Pfft! Someone needs a little privacy.");
       triggerAction("fart");
@@ -1180,8 +1304,8 @@
 
       if (state.egg && !state.hatched) {
         state.hatchTimer += dt;
-        state.hunger = clamp(state.hunger - 0.02 * dt);
-        state.happy = clamp(state.happy - 0.01 * dt);
+        state.hunger = clamp(state.hunger - 0.006 * dt);
+        state.happy = clamp(state.happy - 0.003 * dt);
 
         if (state.hatchTimer >= HATCH_SECONDS) {
           hatchPet(silent);
@@ -1190,6 +1314,13 @@
       }
 
       state.age += dt / AGE_SECONDS_PER_STAGE;
+
+      if (state.age >= LIFESPAN_AGE) {
+        state.alive = false;
+        state.natural = true;
+        say(state.speciesName + " lived a full life and passed away peacefully.");
+        return;
+      }
 
       // Care quality: slow-moving average of the bars, minus a penalty for uncleaned poop
       const sample = (state.hunger + state.happy + state.energy) / 3 - state.poop * 5;
@@ -1202,12 +1333,12 @@
       if (state.immunity > 0) state.immunity -= dt;
       if (!state.sick) {
         if (state.immunity <= 0 && !silent) {
-          const risk = 0.0001
-            + (state.poop >= 3 ? 0.002 : 0)
-            + (state.hunger < 20 ? 0.002 : 0)
-            + (state.care < 40 ? 0.001 : 0)
-            + (weightStatus() === "Overweight" ? 0.0015 : 0)
-            + (weightStatus() === "Underweight" ? 0.0008 : 0);
+          const risk = 0.00005
+            + (state.poop >= 3 ? 0.0004 : 0)
+            + (state.hunger < 20 ? 0.0004 : 0)
+            + (state.care < 40 ? 0.0002 : 0)
+            + (weightStatus() === "Overweight" ? 0.0004 : 0)
+            + (weightStatus() === "Underweight" ? 0.0002 : 0);
           if (Math.random() < risk * dt) {
             state.sick = true;
             state.sickTimer = 0;
@@ -1220,8 +1351,8 @@
       } else {
         if (!silent) {
           state.sickTimer += dt;
-          state.happy = clamp(state.happy - 0.06 * dt);
-          state.energy = clamp(state.energy - 0.02 * dt);
+          state.happy = clamp(state.happy - 0.015 * dt);
+          state.energy = clamp(state.energy - 0.005 * dt);
         }
         if (state.sickTimer > SICK_DEATH_SECONDS) {
           state.alive = false;
@@ -1258,19 +1389,23 @@
       }
 
       if (state.asleep) {
-        state.energy = clamp(state.energy + 2 * dt);
-        state.hunger = clamp(state.hunger - 0.02 * dt);
-        state.happy = clamp(state.happy - 0.02 * dt);
+        state.energy = clamp(state.energy + 0.15 * dt);
+        state.hunger = clamp(state.hunger - 0.006 * dt);
+        state.happy = clamp(state.happy - 0.006 * dt);
         if (state.energy >= 100) {
           state.asleep = false;
           say("Good morning! I'm awake.");
+          if (!silent) {
+            triggerAction("wake");
+            playTone("wake");
+          }
         }
       } else {
-        state.energy = clamp(state.energy - 0.03 * dt);
-        state.hunger = clamp(state.hunger - 0.05 * dt);
-        state.happy = clamp(state.happy - 0.04 * dt);
+        state.energy = clamp(state.energy - 0.01 * dt * (isNight() ? 2 : 1) * (state.stage === STAGES.length - 1 ? 1.5 : 1));
+        state.hunger = clamp(state.hunger - 0.012 * dt);
+        state.happy = clamp(state.happy - 0.012 * dt);
 
-        if (Math.random() < 0.01 * dt && state.poop < 4) {
+        if (Math.random() < 0.0008 * dt && state.poop < 4) {
           state.poop++;
         }
 
@@ -1280,18 +1415,18 @@
           if (shouldFart) {
             triggerFart(silent);
           } else {
-            state.fartCooldown = 8 + Math.random() * 15;
+            state.fartCooldown = fartDelay();
           }
         }
       }
 
       if (state.poop >= 3) {
-        state.happy = clamp(state.happy - 0.05 * dt);
+        state.happy = clamp(state.happy - 0.015 * dt);
       }
 
       if (state.hunger <= 0) {
         state.starving += dt;
-        if (state.starving > 60) {
+        if (state.starving > STARVE_DEATH_SECONDS) {
           state.alive = false;
           say((state.speciesName || "Tama") + " has passed away. Press New pet to start over.");
         }
@@ -1326,9 +1461,9 @@
       if (!requireAlive()) return;
       if (state.asleep) return say("Shh... I'm sleeping.");
       if (state.hunger >= 100) return say("I'm too full!");
-      state.hunger = clamp(state.hunger + 25);
+      state.hunger = clamp(state.hunger + 30);
       state.happy = clamp(state.happy + 3);
-      adjustWeight(4);
+      adjustWeight(0.08);
       say("Yum! Thank you!");
       triggerAction("feed");
       playTone("feed");
@@ -1340,14 +1475,9 @@
       if (state.asleep) return say("Shh... I'm sleeping.");
       if (state.sick) return say("I feel too sick to play.");
       if (state.energy < 15) return say("I'm too tired to play.");
-      state.happy = clamp(state.happy + 20);
-      adjustWeight(-1.5);
-      state.energy = clamp(state.energy - 10);
-      state.hunger = clamp(state.hunger - 5);
-      say("Wheee! That was fun!");
-      triggerAction("play");
-      playTone("play");
-      bounce();
+      if (game) return;
+      closeStatus();
+      openGame();
     }
 
     function toggleSleep() {
@@ -1355,6 +1485,8 @@
       if (state.asleep) {
         state.asleep = false;
         say("I'm awake!");
+        triggerAction("wake");
+        playTone("wake");
       } else {
         if (state.energy >= SLEEP_BLOCK_ENERGY) return say("I'm not sleepy yet.");
         state.asleep = true;
@@ -1398,7 +1530,7 @@
       if (state.sick) return say("I feel too sick to train.");
       if (state.energy < 20) return say("I'm too tired to train.");
       state.happy = clamp(state.happy + 18);
-      adjustWeight(-2.5);
+      adjustWeight(-0.10);
       state.energy = clamp(state.energy - 12);
       state.hunger = clamp(state.hunger - 8);
       say("I learned something new!");
@@ -1407,17 +1539,22 @@
       bounce();
     }
 
+    function isNight() {
+      const h = new Date().getHours();
+      return h >= 22 || h < 7;
+    }
+
     function currentNeed() {
       if (state.sick) return "sick";
       if (state.hunger < 25) return "hungry";
       if (state.poop >= 2) return "dirty";
       if (state.happy < 25) return "bored";
-      if (state.energy < 20) return "tired";
+      if (state.energy < (isNight() ? 40 : 20)) return "tired";
       return null;
     }
 
     function adjustWeight(delta) {
-      state.weight = Math.max(5, Math.min(200, state.weight + delta));
+      state.weight = Math.max(5, Math.min(200, state.weight + delta * STAGES[state.stage].weight));
     }
 
     function weightStatus() {
@@ -1433,6 +1570,7 @@
       const condition = state.sick ? "Sick" : state.asleep ? "Asleep" : "Healthy";
       const rows = [
         ["Name", state.speciesName + " · " + stage.name],
+        ["Generation", String(state.generation)],
         ["Form", FORM_LABELS[state.form] || "Steady"],
         ["Lifetime", (state.age / 15).toFixed(1) + " h"],
         ["Weight", state.weight.toFixed(1) + " g · " + weightStatus()],
@@ -1450,15 +1588,93 @@
         + '<div class="hint">Tap to close</div>';
     }
 
+    function renderMemorial() {
+      const path = state.forms.map((f, i) => STAGES[i].name + ": " + (FORM_LABELS[f] || "Steady")).join("<br>");
+      const rows = [
+        ["Name", state.speciesName],
+        ["Generation", String(state.generation)],
+        ["Lived", (state.age / 15).toFixed(1) + " h"],
+        ["Calls answered", String(state.answered)],
+        ["Missed calls", String(state.mistakes)],
+      ];
+      el.status.innerHTML = "<h2>In loving memory</h2>"
+        + rows.map(r => '<div class="row"><span>' + r[0] + "</span><span>" + r[1] + "</span></div>").join("")
+        + '<div class="row"><span>Life path</span><span>' + path + "</span></div>"
+        + '<div class="hint">Press New pet to hatch an egg from ' + state.speciesName + "'s line</div>";
+    }
+
     function closeStatus() {
       el.status.hidden = true;
     }
 
     function toggleStatus() {
       if (!el.status.hidden) return closeStatus();
+      if (!state.alive && state.natural) {
+        closeGame();
+        el.status.hidden = false;
+        return renderMemorial();
+      }
       if (!requireAlive()) return;
+      closeGame();
       el.status.hidden = false;
       renderStatus();
+    }
+
+    /* ---------- Guess game: which way will the pet look? ---------- */
+
+    let game = null;
+
+    function renderGame(note) {
+      el.game.innerHTML = "<h2>Guess game</h2>"
+        + '<div class="game-note">' + note + "</div>"
+        + '<div class="game-score">Round ' + Math.min(game.round + 1, GAME_ROUNDS) + "/" + GAME_ROUNDS + " · Wins " + game.wins + "</div>"
+        + '<div class="game-btns"><button type="button" class="game-btn" data-dir="left">&#9664; Left</button>'
+        + '<button type="button" class="game-btn" data-dir="right">Right &#9654;</button></div>'
+        + '<div class="hint">Esc to quit</div>';
+    }
+
+    function openGame() {
+      game = { round: 0, wins: 0, locked: false };
+      el.game.hidden = false;
+      renderGame("Which way will I look?");
+    }
+
+    function closeGame() {
+      game = null;
+      el.game.hidden = true;
+    }
+
+    function guess(dir) {
+      if (!game || game.locked) return;
+      const current = game;
+      current.locked = true;
+      const actual = Math.random() < 0.5 ? "left" : "right";
+      const win = dir === actual;
+      if (win) current.wins++;
+      current.round++;
+      renderGame("I looked " + (actual === "left" ? "&#9664; left" : "right &#9654;") + (win ? " - you got it!" : " - nope!"));
+      playTone(win ? "train" : "clean");
+      setTimeout(() => {
+        if (game !== current) return; // quit or replaced meanwhile
+        if (current.round >= GAME_ROUNDS) finishGame();
+        else {
+          current.locked = false;
+          renderGame("Which way will I look?");
+        }
+      }, 700);
+    }
+
+    function finishGame() {
+      const wins = game.wins;
+      closeGame();
+      state.happy = clamp(state.happy + 8 + wins * 5);
+      adjustWeight(-0.06);
+      state.energy = clamp(state.energy - 10);
+      state.hunger = clamp(state.hunger - 5);
+      say(wins >= 4 ? "Wheee! I'm the champion!" : wins >= 2 ? "That was fun!" : "Good try! Let's play again!");
+      triggerAction("play");
+      playTone("play");
+      bounce();
     }
 
     function snack() {
@@ -1467,7 +1683,7 @@
       if (state.hunger >= 100) return say("I'm too full!");
       state.hunger = clamp(state.hunger + 8);
       state.happy = clamp(state.happy + 10);
-      adjustWeight(6);
+      adjustWeight(0.15);
       say(weightStatus() === "Overweight" ? "Yum... but I'm getting chubby!" : "Yum, a treat!");
       triggerAction("snack");
       playTone("snack");
@@ -1600,8 +1816,8 @@
       } else if (asleep) {
         eyes = eyelids;
       } else {
-        eyes = `<circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/><circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>
-                <circle cx="68" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/><circle cx="98" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/>`;
+        eyes = `<g class="eyes"><circle cx="70" cy="${eyeY}" r="4" fill="#1d2b22"/><circle cx="100" cy="${eyeY}" r="4" fill="#1d2b22"/>
+                <circle cx="68" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/><circle cx="98" cy="${eyeY - 2}" r="2" fill="#FFFFFF"/></g>`;
       }
 
       const mouth = dead
@@ -1633,6 +1849,7 @@
 
     let lastSvg = "";
     let renderedPoop = -1;
+    let memorialShown = false;
 
     function renderPoop() {
       const count = Math.max(0, state.poop);
@@ -1669,13 +1886,115 @@
       const showCall = state.alive && state.hatched && !state.asleep && state.call;
       el.attn.hidden = !showCall;
       if (showCall) setText(el.attn, CALL_ICON[state.call] + "!");
-      if (!el.status.hidden) {
-        if (state.alive && state.hatched) renderStatus(); else closeStatus();
+      el.screen.classList.toggle("night", isNight());
+      el.screen.classList.toggle("wandering", state.alive && state.hatched && !state.asleep);
+      if (!state.alive && state.natural && !memorialShown) {
+        memorialShown = true;
+        closeGame();
+        el.status.hidden = false;
       }
+      if (!el.status.hidden) {
+        if (state.alive && state.hatched) renderStatus();
+        else if (state.natural) renderMemorial();
+        else closeStatus();
+      }
+      if (game && (!state.alive || state.asleep)) closeGame();
 
       el.bars.hunger.style.width = state.hunger + "%";
       el.bars.happy.style.width = state.happy + "%";
       el.bars.energy.style.width = state.energy + "%";
+    }
+
+    /* ---------- Backup: copy / paste the save ---------- */
+
+    // Rebuilds a save from untrusted text: numbers are clamped and the species
+    // is looked up by name, so pasted data can never inject markup into the pet SVG.
+    function sanitizeSave(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const sp = speciesOptions.find(o => o.name === raw.speciesName);
+      if (!sp) return null;
+      const num = (v, def, min, max) => {
+        v = Number(v);
+        return Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : def;
+      };
+      const out = newPet();
+      out.speciesInfo = sp;
+      out.speciesName = sp.name;
+      out.hunger = num(raw.hunger, 80, 0, 100);
+      out.happy = num(raw.happy, 80, 0, 100);
+      out.energy = num(raw.energy, 80, 0, 100);
+      out.poop = Math.round(num(raw.poop, 0, 0, 4));
+      out.age = num(raw.age, 0, 0, LIFESPAN_AGE);
+      out.starving = num(raw.starving, 0, 0, STARVE_DEATH_SECONDS);
+      out.asleep = !!raw.asleep;
+      out.alive = raw.alive !== false;
+      out.hatched = !!raw.hatched;
+      out.egg = !out.hatched;
+      out.hatchTimer = num(raw.hatchTimer, 0, 0, HATCH_SECONDS);
+      out.stage = Math.round(num(raw.stage, 0, 0, STAGES.length - 1));
+      out.form = FORM_LABELS[raw.form] ? raw.form : "plain";
+      out.forms = Array.isArray(raw.forms) ? raw.forms.filter(f => FORM_LABELS[f]).slice(0, STAGES.length) : ["plain"];
+      while (out.forms.length <= out.stage) out.forms.push(out.form);
+      out.care = num(raw.care, 70, 0, 100);
+      out.sick = !!raw.sick;
+      out.sickTimer = num(raw.sickTimer, 0, 0, SICK_DEATH_SECONDS);
+      out.immunity = num(raw.immunity, 0, 0, IMMUNITY_SECONDS);
+      out.weight = num(raw.weight, 20, 5, 200);
+      out.call = CALL_TEXT[raw.call] ? raw.call : null;
+      out.callTimer = num(raw.callTimer, 0, 0, CALL_PATIENCE_SECONDS);
+      out.callMissed = !!raw.callMissed;
+      out.answered = Math.round(num(raw.answered, 0, 0, 1e6));
+      out.mistakes = Math.round(num(raw.mistakes, 0, 0, 1e6));
+      out.generation = Math.round(num(raw.generation, 1, 1, 9999));
+      out.natural = !!raw.natural && !out.alive;
+      out.fartCooldown = num(raw.fartCooldown, 120, 0, 360);
+      return out;
+    }
+
+    function closeBackup() {
+      el.backup.hidden = true;
+    }
+
+    function openBackup() {
+      closeStatus();
+      closeGame();
+      el.backupText.value = JSON.stringify(state);
+      el.backupNote.textContent = "Copy this code to keep your pet safe, or paste a saved code and press Load.";
+      el.backup.hidden = false;
+    }
+
+    function copyBackup() {
+      const text = el.backupText.value;
+      const done = () => { el.backupNote.textContent = "Copied!"; };
+      const fallback = () => {
+        el.backupText.select();
+        try { document.execCommand("copy"); done(); } catch (e) { el.backupNote.textContent = "Select the code and copy it manually."; }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    }
+
+    function loadBackup() {
+      let parsed = null;
+      try { parsed = JSON.parse(el.backupText.value); } catch (e) { /* handled below */ }
+      const loaded = sanitizeSave(parsed);
+      if (!loaded) {
+        el.backupNote.textContent = "That doesn't look like a valid pet save.";
+        return;
+      }
+      state = loaded;
+      carry = 0;
+      lastTick = Date.now();
+      renderedPoop = -1;
+      lastSvg = "";
+      memorialShown = false;
+      closeBackup();
+      say("Loaded " + state.speciesName + "!");
+      save();
+      render();
     }
 
     /* ---------- New pet (two-step confirm) ---------- */
@@ -1692,12 +2011,24 @@
 
     function startOver() {
       closeStatus();
+      closeGame();
+      closeBackup();
+      const prev = state;
+      const inherits = prev.natural && !prev.alive;
       state = newPet();
+      if (inherits) {
+        // An egg from a pet that lived a full life: same line, a head start on care
+        state.generation = prev.generation + 1;
+        state.speciesInfo = prev.speciesInfo;
+        state.speciesName = prev.speciesName;
+        if (prev.care >= 70) state.care = 80;
+      }
+      memorialShown = false;
       carry = 0;
       lastTick = Date.now();
       renderedPoop = -1;
       lastSvg = "";
-      say("A new egg is warming up...");
+      say(inherits ? "A new egg from " + state.speciesName + "'s line is warming up..." : "A new egg is warming up...");
       save();
       render();
     }
@@ -1749,8 +2080,24 @@
       }
     });
     el.status.addEventListener("click", closeStatus);
+    el.game.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-dir]");
+      if (b) guess(b.dataset.dir);
+    });
+    document.getElementById("backupBtn").addEventListener("click", openBackup);
+    document.getElementById("backupCopy").addEventListener("click", copyBackup);
+    document.getElementById("backupLoad").addEventListener("click", loadBackup);
+    document.getElementById("backupClose").addEventListener("click", closeBackup);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeStatus();
+      if (e.key === "Escape") {
+        closeStatus();
+        closeGame();
+        closeBackup();
+      } else if (game && e.key === "ArrowLeft") {
+        guess("left");
+      } else if (game && e.key === "ArrowRight") {
+        guess("right");
+      }
     });
 
     // Real-time based ticking: background tabs get throttled, so catch up on return

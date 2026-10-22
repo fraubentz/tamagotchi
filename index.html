@@ -9,21 +9,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #1d2127;
-      --bg-mid: #2c343b;
-      --shell-top: #d8c8ff;
-      --shell-bottom: #a995dd;
-      --shell-shadow: #6f5eae;
-      --screen-bg: #bfe1bf;
-      --screen-border: #4e6254;
-      --screen-text: #1d2b22;
-      --button-top: #c8b4ff;
-      --button-mid: #9377d9;
-      --button-shadow: #5d4b99;
-      --panel: rgba(26, 43, 33, 0.08);
+      --bg-dark: #1f2328;
+      --bg-mid: #3e4651;
+      --shell-top: #f4e7b6;
+      --shell-mid: #d9c98a;
+      --shell-bottom: #b2975b;
+      --shell-shadow: #7c6731;
+      --shell-border: #4d3d1d;
+      --screen-bg: #bfe4bb;
+      --screen-border: #1d3b2d;
+      --screen-inner: #7ba67f;
+      --screen-text: #1c2c22;
+      --button-top: #f4d7a4;
+      --button-mid: #d59e58;
+      --button-shadow: #7e5922;
+      --button-border: #3b2b16;
+      --panel: rgba(34, 52, 37, 0.09);
       --lcd-green: #2f8a4a;
-      --lcd-green-deep: #174c2d;
-      --white: #f7f4ff;
+      --lcd-green-deep: #184a2f;
+      --white: #f9f5e8;
+      --device-shadow: rgba(0, 0, 0, 0.32);
     }
 
     * {
@@ -40,47 +45,81 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, var(--bg-mid), var(--bg-dark) 58%);
+      background: radial-gradient(circle at top, var(--bg-mid), var(--bg-dark) 62%);
       font-family: "Press Start 2P", "Courier New", monospace;
       color: var(--screen-text);
       letter-spacing: 0.04em;
+      overflow: hidden;
     }
 
     .device {
       position: relative;
-      width: 360px;
-      padding: 22px 18px 20px;
-      background: linear-gradient(145deg, var(--shell-top), var(--shell-bottom));
-      border: 4px solid #4d3f74;
-      border-radius: 34px;
+      width: 380px;
+      padding: 26px 18px 22px;
+      background: linear-gradient(180deg, var(--shell-top) 0%, var(--shell-mid) 22%, var(--shell-bottom) 100%);
+      border: 5px solid var(--shell-border);
+      border-radius: 38px 38px 30px 30px;
       box-shadow:
-        inset -8px -8px 0 rgba(88, 70, 125, 0.22),
-        inset 5px 5px 0 rgba(255, 255, 255, 0.25),
-        0 18px 26px rgba(0, 0, 0, 0.35);
+        inset -10px -10px 0 rgba(92, 69, 24, 0.18),
+        inset 8px 8px 0 rgba(255, 255, 255, 0.18),
+        0 18px 26px var(--device-shadow),
+        0 0 0 8px rgba(255,255,255,0.05);
+    }
+
+    .device::before,
+    .device::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      width: 68px;
+      height: 14px;
+      background: rgba(122, 96, 36, 0.28);
+      border-radius: 999px;
+      z-index: 0;
     }
 
     .device::before {
-      content: "";
+      left: 22px;
+    }
+
+    .device::after {
+      right: 22px;
+    }
+
+    .speaker {
       position: absolute;
-      top: 14px;
+      top: 52px;
       left: 50%;
-      width: 110px;
-      height: 10px;
       transform: translateX(-50%);
-      background: rgba(95, 72, 134, 0.45);
-      border-radius: 999px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .speaker span {
+      display: block;
+      width: 6px;
+      height: 6px;
+      background: rgba(58, 48, 27, 0.7);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
     }
 
     .screen {
       position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
-      min-height: 320px;
-      padding: 14px 12px 10px;
-      background: linear-gradient(180deg, #c3e8c1 0%, var(--screen-bg) 100%);
+      min-height: 340px;
+      padding: 16px 12px 12px;
+      background: linear-gradient(180deg, #d8f0d3 0%, var(--screen-bg) 100%);
       border: 6px solid var(--screen-border);
-      border-radius: 16px;
-      box-shadow: inset 0 0 0 4px rgba(31, 44, 33, 0.16);
+      border-radius: 18px;
+      box-shadow:
+        inset 0 0 0 4px rgba(17, 38, 28, 0.15),
+        inset 0 0 0 10px rgba(125, 157, 116, 0.2);
       overflow: hidden;
     }
 
@@ -90,9 +129,9 @@
       inset: 0;
       background: linear-gradient(
         to bottom,
-        rgba(255,255,255,0.2),
-        rgba(255,255,255,0) 20%,
-        rgba(0,0,0,0.05) 100%
+        rgba(255,255,255,0.14),
+        rgba(255,255,255,0) 28%,
+        rgba(0,0,0,0.06) 100%
       );
       pointer-events: none;
     }
@@ -106,12 +145,13 @@
       font-size: 9px;
       line-height: 1.5;
       text-transform: uppercase;
+      color: var(--screen-text);
     }
 
     .bars {
       position: relative;
       z-index: 1;
-      margin-top: 16px;
+      margin-top: 14px;
       font-size: 9px;
       line-height: 1.5;
       text-transform: uppercase;
@@ -127,11 +167,12 @@
 
     .bar {
       position: relative;
-      width: 110px;
-      height: 10px;
-      background: rgba(35, 58, 43, 0.12);
-      border: 2px solid #1d2d24;
+      width: 126px;
+      height: 11px;
+      background: rgba(29, 55, 39, 0.12);
+      border: 2px solid rgba(23, 44, 33, 0.9);
       overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
     }
 
     .bar span {
@@ -140,7 +181,7 @@
       width: 100%;
       background: linear-gradient(90deg, var(--lcd-green), var(--lcd-green-deep));
       transition: width 0.35s ease;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
     }
 
     .pet-area {
@@ -150,20 +191,30 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 150px;
+      min-height: 160px;
       margin-top: 8px;
       border-radius: 10px;
-      background: rgba(25, 51, 37, 0.06);
+      background: rgba(19, 41, 28, 0.05);
       overflow: hidden;
+    }
+
+    .pet-area::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 2px solid rgba(29, 55, 39, 0.14);
+      border-radius: 8px;
     }
 
     #pet {
       position: relative;
-      font-size: 74px;
+      font-size: 92px;
+      line-height: 1;
       user-select: none;
       filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.12));
       transform-origin: center bottom;
       transition: filter 0.2s ease;
+      z-index: 1;
     }
 
     .bounce {
@@ -172,7 +223,7 @@
 
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-14px); }
+      50% { transform: translateY(-12px); }
     }
 
     .sleeping #pet {
@@ -181,28 +232,32 @@
 
     #poop {
       position: absolute;
-      right: 10px;
-      bottom: 10px;
-      font-size: 18px;
+      right: 18px;
+      bottom: 14px;
+      font-size: 20px;
       filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.14));
+      z-index: 1;
     }
 
     #message {
       position: relative;
       z-index: 1;
-      min-height: 42px;
-      padding-top: 8px;
+      min-height: 50px;
+      padding-top: 10px;
       font-size: 9px;
       line-height: 1.5;
       text-align: center;
       text-transform: uppercase;
+      color: var(--screen-text);
     }
 
     .buttons {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px 8px;
       margin-top: 18px;
+      position: relative;
+      z-index: 2;
     }
 
     .btn-wrap {
@@ -214,17 +269,18 @@
 
     button {
       position: relative;
-      width: 58px;
-      height: 58px;
-      border: 4px solid #4e3a7a;
-      border-radius: 16px;
+      width: 62px;
+      height: 62px;
+      border: 4px solid var(--button-border);
+      border-radius: 18px;
       background: linear-gradient(180deg, var(--button-top) 0%, var(--button-mid) 100%);
       color: var(--white);
       font: inherit;
-      font-size: 22px;
+      font-size: 24px;
       cursor: pointer;
       box-shadow: 0 6px 0 var(--button-shadow);
       transition: transform 0.08s ease, box-shadow 0.08s ease;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.12);
     }
 
     button:active {
@@ -237,17 +293,18 @@
       font-size: 8px;
       line-height: 1.5;
       text-transform: uppercase;
-      color: var(--white);
+      color: #f9f5e8;
       text-align: center;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.2);
     }
 
     .reset {
       display: block;
-      margin: 18px auto 0;
-      min-width: 120px;
+      margin: 20px auto 0;
+      min-width: 126px;
       height: auto;
-      padding: 8px 12px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
       border: 2px solid rgba(255,255,255,0.7);
       background: rgba(255,255,255,0.08);
       font-size: 8px;
@@ -257,13 +314,17 @@
 
     @media (max-width: 420px) {
       .device {
-        width: min(88vw, 360px);
+        width: min(90vw, 380px);
       }
     }
   </style>
 </head>
 <body>
   <div class="device">
+    <div class="speaker" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
     <div class="screen" id="screen">
       <div class="top">
         <span id="name">Tama</span>

@@ -217,9 +217,17 @@
       width: 180px;
       height: 144px;
       user-select: none;
+      cursor: pointer;
+      touch-action: manipulation;
       transform-origin: center bottom;
       transition: filter 0.2s ease, transform 0.2s ease;
       z-index: 1;
+    }
+
+    #pet:focus-visible {
+      outline: 3px solid rgba(31, 45, 42, 0.7);
+      outline-offset: 4px;
+      border-radius: 12px;
     }
 
     .pet-svg {
@@ -511,6 +519,13 @@
     .status .row span:last-child { text-align: right; }
     .status .hint { margin-top: 8px; text-align: center; opacity: 0.6; }
 
+    .action.pet .heart {
+      position: absolute;
+      font-size: 22px;
+      color: #d6336c;
+      animation: healRise 1.2s ease-out forwards;
+    }
+
     .sick .pet-svg {
       filter: sepia(0.45) hue-rotate(50deg) saturate(1.5) drop-shadow(3px 3px 0 var(--pet-shadow));
     }
@@ -673,6 +688,9 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 12px 14px;
+      max-width: 250px;
+      margin-left: auto;
+      margin-right: auto;
       margin-top: 18px;
       position: relative;
       z-index: 2;
@@ -782,7 +800,7 @@
 
       <!-- No aria-live here: its contents refresh constantly. Updates are announced via #message only. -->
       <div class="pet-area" id="petArea">
-        <div id="pet"></div>
+        <div id="pet" role="button" tabindex="0" aria-label="Pet the pet"></div>
         <div id="poop" aria-label="Poop pile"></div>
         <div class="action-layer" id="actionLayer" aria-hidden="true"></div>
         <div class="attn" id="attn" hidden aria-hidden="true"></div>
@@ -825,6 +843,10 @@
       <div class="btn-wrap">
         <button id="statusBtn" type="button" title="Health status" aria-label="Check health status">H</button>
         <div class="label">Health</div>
+      </div>
+      <div class="btn-wrap">
+        <button id="petBtn" type="button" title="Pet" aria-label="Pet the pet">&hearts;</button>
+        <div class="label">Pet</div>
       </div>
     </div>
 
@@ -1026,6 +1048,7 @@
           sleep: [320, 200],
           medicine: [500, 700, 900],
           call: [880, 660],
+          pet: [600, 820],
           fart: [74, 54],
         };
         const f = frequencies[type];
@@ -1068,6 +1091,8 @@
         action.innerHTML = '<div class="splash"></div><div class="drop"></div><div class="bubble" style="left: 42%; top: 68%;"></div><div class="bubble" style="left: 52%; top: 70%;"></div><div class="bubble" style="left: 60%; top: 66%;"></div>';
       } else if (type === "train") {
         action.innerHTML = '<div class="star">⭐</div><div class="spark" style="left: 40%; top: 52%;"></div><div class="spark" style="left: 56%; top: 42%;"></div><div class="spark" style="left: 68%; top: 56%;"></div>';
+      } else if (type === "pet") {
+        action.innerHTML = '<div class="heart" style="left: 40%; top: 36%;">❤</div><div class="heart" style="left: 52%; top: 28%; animation-delay: 0.15s;">❤</div><div class="heart" style="left: 62%; top: 38%; animation-delay: 0.3s;">❤</div>';
       } else if (type === "medicine") {
         action.innerHTML = '<div class="pill">💊</div><div class="heal" style="left: 38%; top: 50%; animation-delay: 0.5s;">+</div><div class="heal" style="left: 52%; top: 40%; animation-delay: 0.65s;">+</div><div class="heal" style="left: 64%; top: 52%; animation-delay: 0.8s;">+</div>';
       } else if (type === "sleep") {
@@ -1080,7 +1105,7 @@
       el.actionLayer.appendChild(action);
       setTimeout(() => {
         if (action.parentNode) action.remove();
-      }, type === "sleep" ? 2100 : type === "medicine" ? 1800 : 1000);
+      }, type === "sleep" ? 2100 : type === "medicine" ? 1800 : type === "pet" ? 1400 : 1000);
     }
 
     function triggerFart(silent) {
@@ -1408,6 +1433,22 @@
       renderStatus();
     }
 
+    const PET_COOLDOWN_MS = 2000;
+    let lastPet = 0;
+
+    function petPet() {
+      if (!requireAlive()) return;
+      if (state.asleep) return say("Shh... I'm sleeping.");
+      if (Date.now() - lastPet < PET_COOLDOWN_MS) return say("Hehe, not so fast!");
+      if (state.happy >= 100) return say("I'm already so happy!");
+      lastPet = Date.now();
+      state.happy = clamp(state.happy + 6);
+      say(state.sick ? "That helps a little..." : "Aww, that feels nice!");
+      triggerAction("pet");
+      playTone("pet");
+      bounce();
+    }
+
     function medicine() {
       if (!requireAlive()) return;
       if (state.asleep) return say("Shh... I'm sleeping.");
@@ -1644,6 +1685,14 @@
     document.getElementById("trainBtn").addEventListener("click", train);
     document.getElementById("medicineBtn").addEventListener("click", medicine);
     document.getElementById("statusBtn").addEventListener("click", toggleStatus);
+    document.getElementById("petBtn").addEventListener("click", petPet);
+    el.pet.addEventListener("click", petPet);
+    el.pet.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        petPet();
+      }
+    });
     el.status.addEventListener("click", closeStatus);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeStatus();

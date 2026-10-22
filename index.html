@@ -468,6 +468,49 @@
       100% { opacity: 0; transform: translate(14px, -22px) scale(1.1); }
     }
 
+    .attn {
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      z-index: 3;
+      font-size: 22px;
+      line-height: 1;
+      animation: attnBlink 0.8s steps(2, end) infinite;
+    }
+
+    .attn[hidden] { display: none; }
+    .attn b { color: #b3261e; font-size: 16px; }
+
+    @keyframes attnBlink {
+      50% { opacity: 0.25; }
+    }
+
+    .status {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      padding: 14px 14px 10px;
+      background: rgba(218, 241, 216, 0.97);
+      font-size: 8px;
+      line-height: 1.9;
+      text-transform: uppercase;
+      overflow-y: auto;
+      cursor: pointer;
+    }
+
+    .status[hidden] { display: none; }
+    .status h2 { margin: 0 0 8px; font-size: 9px; text-align: center; }
+
+    .status .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px dashed rgba(29, 55, 39, 0.25);
+    }
+
+    .status .row span:last-child { text-align: right; }
+    .status .hint { margin-top: 8px; text-align: center; opacity: 0.6; }
+
     .sick .pet-svg {
       filter: sepia(0.45) hue-rotate(50deg) saturate(1.5) drop-shadow(3px 3px 0 var(--pet-shadow));
     }
@@ -742,9 +785,12 @@
         <div id="pet"></div>
         <div id="poop" aria-label="Poop pile"></div>
         <div class="action-layer" id="actionLayer" aria-hidden="true"></div>
+        <div class="attn" id="attn" hidden aria-hidden="true"></div>
       </div>
 
       <div id="message" aria-live="polite" aria-atomic="true"></div>
+
+      <div class="status" id="status" role="dialog" aria-label="Health status" hidden></div>
     </div>
 
     <div class="buttons" aria-label="Actions">
@@ -776,6 +822,10 @@
         <button id="medicineBtn" type="button" title="Medicine" aria-label="Give the pet medicine">M</button>
         <div class="label">Medicine</div>
       </div>
+      <div class="btn-wrap">
+        <button id="statusBtn" type="button" title="Health status" aria-label="Check health status">H</button>
+        <div class="label">Health</div>
+      </div>
     </div>
 
     <button class="reset" id="resetBtn" type="button" aria-label="Start a new pet">New pet</button>
@@ -792,17 +842,31 @@
     // Evolution: age (in 4-minute units) triggers the next stage;
     // care quality at that moment picks the form.
     const STAGES = [
-      { name: "Baby",   minAge: 0,   scale: 0.70 },
-      { name: "Child",  minAge: 15,  scale: 0.82 },  // ~1 hour
-      { name: "Teen",   minAge: 60,  scale: 0.92 },  // ~4 hours
-      { name: "Adult",  minAge: 150, scale: 1.04 },  // ~10 hours
-      { name: "Senior", minAge: 360, scale: 1.00 },  // ~24 hours
+      { name: "Baby",   minAge: 0,   scale: 0.70, weight: 20 },
+      { name: "Child",  minAge: 15,  scale: 0.82, weight: 35 },  // ~1 hour
+      { name: "Teen",   minAge: 60,  scale: 0.92, weight: 55 },  // ~4 hours
+      { name: "Adult",  minAge: 150, scale: 1.04, weight: 75 },  // ~10 hours
+      { name: "Senior", minAge: 360, scale: 1.00, weight: 70 },  // ~24 hours
     ];
     const CARE_HORIZON_SECONDS = 1800; // how slowly care quality moves
 
     // Sickness: neglect raises the risk; untreated illness is fatal after this long
     const SICK_DEATH_SECONDS = 1200;   // 20 minutes
     const IMMUNITY_SECONDS = 180;      // protected from getting sick again after a cure
+
+    // Attention: the pet calls when it needs something. An unanswered call becomes a
+    // care mistake after this long, which lowers care quality (and so evolution form).
+    const CALL_PATIENCE_SECONDS = 180;
+    const MISTAKE_CARE_PENALTY = 8;
+    const CALL_TEXT = {
+      sick: "I don't feel well!",
+      hungry: "I'm hungry!",
+      dirty: "It's messy in here!",
+      bored: "I'm bored!",
+      tired: "I'm sleepy..."
+    };
+    const CALL_ICON = { sick: "💊", hungry: "🍙", dirty: "💩", bored: "🎾", tired: "💤" };
+    const FORM_LABELS = { bright: "Radiant", plain: "Steady", scruffy: "Scruffy" };
 
     const speciesOptions = [
       { name: "Pip", primary: "#7ec6a8", secondary: "#dff9ee", accent: "#2d7a5d", ears: "short", tail: "round" },
@@ -822,6 +886,8 @@
       name: document.getElementById("name"),
       message: document.getElementById("message"),
       actionLayer: document.getElementById("actionLayer"),
+      status: document.getElementById("status"),
+      attn: document.getElementById("attn"),
       resetBtn: document.getElementById("resetBtn"),
       bars: {
         hunger: document.querySelector('[data-bar="hunger"]'),
@@ -862,6 +928,12 @@
         sick: false,
         sickTimer: 0,      // seconds spent sick
         immunity: 0,       // seconds of protection left after medicine
+        weight: 20,        // grams; drifts toward the stage's healthy weight
+        call: null,        // what the pet is currently calling about
+        callTimer: 0,
+        callMissed: false,
+        answered: 0,
+        mistakes: 0,
       };
     }
 
@@ -953,6 +1025,7 @@
           train: [390, 660, 880],
           sleep: [320, 200],
           medicine: [500, 700, 900],
+          call: [880, 660],
           fart: [74, 54],
         };
         const f = frequencies[type];
@@ -1104,6 +1177,33 @@
         }
       }
 
+      // Weight drifts back toward the healthy weight for this stage
+      const baseWeight = STAGES[state.stage].weight;
+      state.weight = Math.max(5, state.weight + (baseWeight - state.weight) * Math.min(1, dt / 1800));
+
+      // Attention: calls pause while asleep and during away-time catch-up (silent)
+      if (!state.asleep) {
+        const need = currentNeed();
+        if (need !== state.call) {
+          if (state.call) state.answered++;
+          state.call = need;
+          state.callTimer = 0;
+          state.callMissed = false;
+          if (need && !silent) {
+            say(CALL_TEXT[need]);
+            playTone("call");
+            bounce();
+          }
+        } else if (need && !silent) {
+          state.callTimer += dt;
+          if (!state.callMissed && state.callTimer > CALL_PATIENCE_SECONDS) {
+            state.callMissed = true;
+            state.mistakes++;
+            state.care = clamp(state.care - MISTAKE_CARE_PENALTY);
+          }
+        }
+      }
+
       if (state.asleep) {
         state.energy = clamp(state.energy + 2 * dt);
         state.hunger = clamp(state.hunger - 0.02 * dt);
@@ -1175,6 +1275,7 @@
       if (state.hunger >= 100) return say("I'm too full!");
       state.hunger = clamp(state.hunger + 25);
       state.happy = clamp(state.happy + 3);
+      adjustWeight(4);
       say("Yum! Thank you!");
       triggerAction("feed");
       playTone("feed");
@@ -1187,6 +1288,7 @@
       if (state.sick) return say("I feel too sick to play.");
       if (state.energy < 15) return say("I'm too tired to play.");
       state.happy = clamp(state.happy + 20);
+      adjustWeight(-1.5);
       state.energy = clamp(state.energy - 10);
       state.hunger = clamp(state.hunger - 5);
       say("Wheee! That was fun!");
@@ -1243,12 +1345,67 @@
       if (state.sick) return say("I feel too sick to train.");
       if (state.energy < 20) return say("I'm too tired to train.");
       state.happy = clamp(state.happy + 18);
+      adjustWeight(-2.5);
       state.energy = clamp(state.energy - 12);
       state.hunger = clamp(state.hunger - 8);
       say("I learned something new!");
       triggerAction("train");
       playTone("train");
       bounce();
+    }
+
+    function currentNeed() {
+      if (state.sick) return "sick";
+      if (state.hunger < 25) return "hungry";
+      if (state.poop >= 2) return "dirty";
+      if (state.happy < 25) return "bored";
+      if (state.energy < 20) return "tired";
+      return null;
+    }
+
+    function adjustWeight(delta) {
+      state.weight = Math.max(5, Math.min(200, state.weight + delta));
+    }
+
+    function weightStatus() {
+      const ratio = state.weight / STAGES[state.stage].weight;
+      if (ratio < 0.8) return "Underweight";
+      if (ratio > 1.25) return "Overweight";
+      return "Healthy";
+    }
+
+    function renderStatus() {
+      const stage = STAGES[state.stage] || STAGES[0];
+      const careLabel = state.care >= 70 ? "Excellent" : state.care >= 40 ? "Okay" : "Poor";
+      const condition = state.sick ? "Sick" : state.asleep ? "Asleep" : "Healthy";
+      const rows = [
+        ["Name", state.speciesName + " · " + stage.name],
+        ["Form", FORM_LABELS[state.form] || "Steady"],
+        ["Lifetime", (state.age / 15).toFixed(1) + " h"],
+        ["Weight", state.weight.toFixed(1) + " g · " + weightStatus()],
+        ["Condition", condition],
+        ["Hunger", Math.round(state.hunger) + "%"],
+        ["Happy", Math.round(state.happy) + "%"],
+        ["Energy", Math.round(state.energy) + "%"],
+        ["Care", careLabel],
+        ["Poop", String(state.poop)],
+        ["Calls answered", String(state.answered)],
+        ["Missed calls", String(state.mistakes)],
+      ];
+      el.status.innerHTML = "<h2>Health status</h2>"
+        + rows.map(r => '<div class="row"><span>' + r[0] + "</span><span>" + r[1] + "</span></div>").join("")
+        + '<div class="hint">Tap to close</div>';
+    }
+
+    function closeStatus() {
+      el.status.hidden = true;
+    }
+
+    function toggleStatus() {
+      if (!el.status.hidden) return closeStatus();
+      if (!requireAlive()) return;
+      el.status.hidden = false;
+      renderStatus();
     }
 
     function medicine() {
@@ -1427,6 +1584,13 @@
       setText(el.age, "Age: " + Math.floor(state.age));
       renderPoop();
 
+      const showCall = state.alive && state.hatched && !state.asleep && state.call;
+      el.attn.hidden = !showCall;
+      if (showCall) setText(el.attn, CALL_ICON[state.call] + "!");
+      if (!el.status.hidden) {
+        if (state.alive && state.hatched) renderStatus(); else closeStatus();
+      }
+
       el.bars.hunger.style.width = state.hunger + "%";
       el.bars.happy.style.width = state.happy + "%";
       el.bars.energy.style.width = state.energy + "%";
@@ -1445,6 +1609,7 @@
     }
 
     function startOver() {
+      closeStatus();
       state = newPet();
       carry = 0;
       lastTick = Date.now();
@@ -1478,6 +1643,11 @@
     document.getElementById("bathBtn").addEventListener("click", bath);
     document.getElementById("trainBtn").addEventListener("click", train);
     document.getElementById("medicineBtn").addEventListener("click", medicine);
+    document.getElementById("statusBtn").addEventListener("click", toggleStatus);
+    el.status.addEventListener("click", closeStatus);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeStatus();
+    });
 
     // Real-time based ticking: background tabs get throttled, so catch up on return
     document.addEventListener("visibilitychange", () => {

@@ -488,6 +488,17 @@
     }
 
     .attn[hidden] { display: none; }
+
+    .mood {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      z-index: 3;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .mood[hidden] { display: none; }
     .attn b { color: #b3261e; font-size: 16px; }
 
     @keyframes attnBlink {
@@ -907,6 +918,7 @@
         <div id="poop" aria-label="Poop pile"></div>
         <div class="action-layer" id="actionLayer" aria-hidden="true"></div>
         <div class="attn" id="attn" hidden aria-hidden="true"></div>
+        <div class="mood" id="mood" hidden aria-hidden="true"></div>
       </div>
 
       <div id="message" aria-live="polite" aria-atomic="true"></div>
@@ -1012,11 +1024,22 @@
       tired: "I'm sleepy..."
     };
     const CALL_ICON = { sick: "💊", hungry: "🍙", dirty: "💩", bored: "🎾", tired: "💤" };
-    const FORM_LABELS = { bright: "Radiant", plain: "Steady", scruffy: "Scruffy" };
+    const FORM_LABELS = { bright: "Radiant", loyal: "Devoted", calm: "Calm", plain: "Steady", scruffy: "Scruffy" };
 
     // Long-term play: a natural end of life, and the guess mini-game
     const LIFESPAN_AGE = 540;          // ~36 hours; seniors slow down before this
     const GAME_ROUNDS = 5;
+
+    // Moods and bond: every so often the pet is in a mood. Giving it what it wants
+    // builds bond; ignoring it costs nothing, the mood just passes.
+    const MOODS = {
+      playful: { icon: "🎈", label: "Playful", text: "wants to play", wants: "play",  thanks: "Yay, you knew I wanted to play!" },
+      grumpy:  { icon: "💢", label: "Grumpy",  text: "wants a snack", wants: "snack", thanks: "Mmm... thanks. I feel better now." },
+      shy:     { icon: "🙈", label: "Shy",     text: "wants a cuddle", wants: "pet",   thanks: "You always understand me..." }
+    };
+    const MOOD_PATIENCE_SECONDS = 900;   // a mood fades after 15 minutes
+    const BOND_GAIN = 5;                 // for giving the pet what it wants
+    const BOND_DECAY_RATE = 0.00005;     // share of bond lost per second (~17% an hour)
 
     const speciesOptions = [
       { name: "Pip", primary: "#7ec6a8", secondary: "#dff9ee", accent: "#2d7a5d", ears: "short", tail: "round" },
@@ -1039,6 +1062,7 @@
       status: document.getElementById("status"),
       attn: document.getElementById("attn"),
       mute: document.getElementById("muteBtn"),
+      mood: document.getElementById("mood"),
       game: document.getElementById("game"),
       backup: document.getElementById("backup"),
       backupText: document.getElementById("backupText"),
@@ -1089,6 +1113,10 @@
         callMissed: false,
         answered: 0,
         mistakes: 0,
+        mood: "content",
+        moodTimer: nextMoodDelay(),
+        moodAge: 0,
+        bond: 40,          // 0-100, how close you two are
         generation: 1,     // which pet in the family line this is
         natural: false,    // true if it passed away of old age
       };
@@ -1120,6 +1148,10 @@
     let state = load() || newPet();
     let carry = 0;           // leftover fractional seconds between ticks
     let lastTick = Date.now();
+
+    function nextMoodDelay() {
+      return 600 + Math.random() * 900; // 10-25 minutes between moods
+    }
 
     function fartDelay() {
       return 120 + Math.random() * 240; // seconds until the next fart check
@@ -1280,7 +1312,11 @@
     /* ---------- Evolution ---------- */
 
     function careForm() {
-      return state.care >= 70 ? "bright" : state.care >= 40 ? "plain" : "scruffy";
+      if (state.care < 40) return "scruffy";
+      if (state.care >= 70 && state.bond >= 50) return "bright";
+      if (state.bond >= 70) return "loyal";
+      if (state.care >= 70) return "calm";
+      return "plain";
     }
 
     function checkEvolution(silent) {
@@ -1351,7 +1387,7 @@
       } else {
         if (!silent) {
           state.sickTimer += dt;
-          state.happy = clamp(state.happy - 0.015 * dt);
+          state.happy = clamp(state.happy - 0.008 * dt);
           state.energy = clamp(state.energy - 0.005 * dt);
         }
         if (state.sickTimer > SICK_DEATH_SECONDS) {
@@ -1369,7 +1405,10 @@
       if (!state.asleep) {
         const need = currentNeed();
         if (need !== state.call) {
-          if (state.call) state.answered++;
+          if (state.call) {
+            state.answered++;
+            if (!state.callMissed) state.bond = clamp(state.bond + 1.5);
+          }
           state.call = need;
           state.callTimer = 0;
           state.callMissed = false;
@@ -1388,10 +1427,32 @@
         }
       }
 
+      // Moods: paused while asleep, sick, or away
+      if (!state.asleep && !state.sick && !silent) {
+        state.bond = clamp(state.bond * (1 - BOND_DECAY_RATE * dt));
+        if (state.mood === "content") {
+          state.moodTimer -= dt;
+          if (state.moodTimer <= 0) {
+            const keys = Object.keys(MOODS);
+            state.mood = keys[Math.floor(Math.random() * keys.length)];
+            state.moodAge = 0;
+            say(state.speciesName + " feels " + MOODS[state.mood].label.toLowerCase() + "!");
+            bounce();
+          }
+        } else {
+          state.moodAge += dt;
+          if (state.moodAge > MOOD_PATIENCE_SECONDS) {
+            state.mood = "content";
+            state.moodAge = 0;
+            state.moodTimer = nextMoodDelay();
+          }
+        }
+      }
+
       if (state.asleep) {
         state.energy = clamp(state.energy + 0.15 * dt);
         state.hunger = clamp(state.hunger - 0.006 * dt);
-        state.happy = clamp(state.happy - 0.006 * dt);
+        state.happy = clamp(state.happy - 0.003 * dt);
         if (state.energy >= 100) {
           state.asleep = false;
           say("Good morning! I'm awake.");
@@ -1403,7 +1464,7 @@
       } else {
         state.energy = clamp(state.energy - 0.01 * dt * (isNight() ? 2 : 1) * (state.stage === STAGES.length - 1 ? 1.5 : 1));
         state.hunger = clamp(state.hunger - 0.012 * dt);
-        state.happy = clamp(state.happy - 0.012 * dt);
+        state.happy = clamp(state.happy - 0.006 * dt);
 
         if (Math.random() < 0.0008 * dt && state.poop < 4) {
           state.poop++;
@@ -1421,7 +1482,7 @@
       }
 
       if (state.poop >= 3) {
-        state.happy = clamp(state.happy - 0.015 * dt);
+        state.happy = clamp(state.happy - 0.010 * dt);
       }
 
       if (state.hunger <= 0) {
@@ -1564,6 +1625,22 @@
       return "Healthy";
     }
 
+    function bondLabel() {
+      return state.bond >= 70 ? "Inseparable" : state.bond >= 45 ? "Close" : state.bond >= 20 ? "Friendly" : "Getting to know you";
+    }
+
+    // Returns true if the action was what the pet's mood wanted
+    function moodResponse(action) {
+      const m = MOODS[state.mood];
+      if (!m || m.wants !== action) return false;
+      state.bond = clamp(state.bond + BOND_GAIN);
+      state.mood = "content";
+      state.moodAge = 0;
+      state.moodTimer = nextMoodDelay();
+      say(m.thanks);
+      return true;
+    }
+
     function renderStatus() {
       const stage = STAGES[state.stage] || STAGES[0];
       const careLabel = state.care >= 70 ? "Excellent" : state.care >= 40 ? "Okay" : "Poor";
@@ -1575,6 +1652,8 @@
         ["Lifetime", (state.age / 15).toFixed(1) + " h"],
         ["Weight", state.weight.toFixed(1) + " g · " + weightStatus()],
         ["Condition", condition],
+        ["Mood", state.mood === "content" ? "Content" : MOODS[state.mood].label + " · " + MOODS[state.mood].text],
+        ["Bond", bondLabel()],
         ["Hunger", Math.round(state.hunger) + "%"],
         ["Happy", Math.round(state.happy) + "%"],
         ["Energy", Math.round(state.energy) + "%"],
@@ -1594,6 +1673,7 @@
         ["Name", state.speciesName],
         ["Generation", String(state.generation)],
         ["Lived", (state.age / 15).toFixed(1) + " h"],
+        ["Bond", bondLabel()],
         ["Calls answered", String(state.answered)],
         ["Missed calls", String(state.mistakes)],
       ];
@@ -1672,6 +1752,7 @@
       state.energy = clamp(state.energy - 10);
       state.hunger = clamp(state.hunger - 5);
       say(wins >= 4 ? "Wheee! I'm the champion!" : wins >= 2 ? "That was fun!" : "Good try! Let's play again!");
+      moodResponse("play");
       triggerAction("play");
       playTone("play");
       bounce();
@@ -1685,6 +1766,7 @@
       state.happy = clamp(state.happy + 10);
       adjustWeight(0.15);
       say(weightStatus() === "Overweight" ? "Yum... but I'm getting chubby!" : "Yum, a treat!");
+      moodResponse("snack");
       triggerAction("snack");
       playTone("snack");
       bounce();
@@ -1701,6 +1783,7 @@
       lastPet = Date.now();
       state.happy = clamp(state.happy + 6);
       say(state.sick ? "That helps a little..." : "Aww, that feels nice!");
+      moodResponse("pet");
       triggerAction("pet");
       playTone("pet");
       bounce();
@@ -1762,6 +1845,12 @@
       }
       if (state.form === "scruffy") {
         out += `<path d="M78 46 l4 -10 4 8 4 -9 4 11" fill="none" stroke="${species.accent}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+      if (state.form === "loyal") {
+        out += `<path d="M126 40 c-3 -6 -12 -2 -8 5 l8 8 l8 -8 c4 -7 -5 -11 -8 -5z" fill="#e0556f"/>`;
+      }
+      if (state.form === "calm") {
+        out += `<path d="M124 52 c0 -12 10 -16 18 -16 c0 10 -6 18 -18 16z" fill="#7fbf8a"/>`;
       }
       if (state.stage === STAGES.length - 1) {
         out += `<path d="M64 54 Q70 50 76 54 M94 54 Q100 50 106 54" fill="none" stroke="#f4f4f4" stroke-width="3" stroke-linecap="round"/>`;
@@ -1886,6 +1975,9 @@
       const showCall = state.alive && state.hatched && !state.asleep && state.call;
       el.attn.hidden = !showCall;
       if (showCall) setText(el.attn, CALL_ICON[state.call] + "!");
+      const showMood = state.alive && state.hatched && !state.asleep && state.mood !== "content" && MOODS[state.mood];
+      el.mood.hidden = !showMood;
+      if (showMood) setText(el.mood, MOODS[state.mood].icon);
       el.screen.classList.toggle("night", isNight());
       el.screen.classList.toggle("wandering", state.alive && state.hatched && !state.asleep);
       if (!state.alive && state.natural && !memorialShown) {
@@ -1945,6 +2037,10 @@
       out.callMissed = !!raw.callMissed;
       out.answered = Math.round(num(raw.answered, 0, 0, 1e6));
       out.mistakes = Math.round(num(raw.mistakes, 0, 0, 1e6));
+      out.mood = MOODS[raw.mood] ? raw.mood : "content";
+      out.moodAge = num(raw.moodAge, 0, 0, MOOD_PATIENCE_SECONDS);
+      out.moodTimer = num(raw.moodTimer, 900, 0, 1800);
+      out.bond = num(raw.bond, 40, 0, 100);
       out.generation = Math.round(num(raw.generation, 1, 1, 9999));
       out.natural = !!raw.natural && !out.alive;
       out.fartCooldown = num(raw.fartCooldown, 120, 0, 360);
